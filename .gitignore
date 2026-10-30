@@ -21,3 +21,4 @@ storage/
 test-results/
 playwright-report/
 coverage/
+.vercel

@@ -1,0 +1,254 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "@fontsource-variable/plus-jakarta-sans";
+
+@custom-variant dark (&:is(.dark *));
+
+/* Token tema SIBK — lihat docs/DESIGN.md §2. Semua pasangan teks lolos WCAG AA (≥ 4.5:1). */
+
+@theme inline {
+  --font-heading: var(--font-sans);
+  --font-sans: "Plus Jakarta Sans Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: ui-monospace, "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-anon: var(--anon);
+  --color-logo-1: var(--logo-1);
+  --color-logo-2: var(--logo-2);
+  --color-logo-teks: var(--logo-teks);
+  --color-anon-foreground: var(--anon-foreground);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+:root {
+  --radius: 0.75rem;
+  --background: oklch(0.99 0.004 200);
+  --foreground: oklch(0.22 0.02 220);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.22 0.02 220);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.22 0.02 220);
+  --primary: oklch(0.5 0.09 195);
+  --primary-foreground: oklch(0.99 0 0);
+  --secondary: oklch(0.95 0.02 195);
+  --secondary-foreground: oklch(0.3 0.05 200);
+  --muted: oklch(0.96 0.006 210);
+  --muted-foreground: oklch(0.48 0.02 220);
+  --accent: oklch(0.94 0.03 180);
+  --accent-foreground: oklch(0.28 0.05 200);
+  --destructive: oklch(0.55 0.19 25);
+  --destructive-foreground: oklch(0.99 0 0);
+  --success: oklch(0.5 0.11 155);
+  --success-foreground: oklch(0.99 0 0);
+  --warning: oklch(0.82 0.13 80);
+  --warning-foreground: oklch(0.3 0.06 60);
+  --info: oklch(0.52 0.1 240);
+  --info-foreground: oklch(0.99 0 0);
+  --anon: oklch(0.45 0.1 285);
+  --anon-foreground: oklch(0.99 0 0);
+  /* logo SIBK (docs/brand): teal #007373 + teal muda #4FB3AB, tulisan #0F2A2E */
+  --logo-1: #007373;
+  --logo-2: #4fb3ab;
+  --logo-teks: #0f2a2e;
+  --border: oklch(0.91 0.01 210);
+  --input: oklch(0.89 0.012 210);
+  --ring: oklch(0.6 0.09 195);
+  /* chart: pribadi, sosial, belajar, karier, lainnya */
+  --chart-1: oklch(0.55 0.09 195);
+  --chart-2: oklch(0.7 0.13 75);
+  --chart-3: oklch(0.55 0.12 285);
+  --chart-4: oklch(0.6 0.15 25);
+  --chart-5: oklch(0.6 0.11 145);
+  --sidebar: oklch(0.975 0.008 200);
+  --sidebar-foreground: oklch(0.22 0.02 220);
+  --sidebar-primary: oklch(0.5 0.09 195);
+  --sidebar-primary-foreground: oklch(0.99 0 0);
+  --sidebar-accent: oklch(0.94 0.025 195);
+  --sidebar-accent-foreground: oklch(0.28 0.05 200);
+  --sidebar-border: oklch(0.91 0.01 210);
+  --sidebar-ring: oklch(0.6 0.09 195);
+}
+
+.dark {
+  --background: oklch(0.17 0.015 220);
+  --foreground: oklch(0.95 0.008 200);
+  --card: oklch(0.21 0.015 220);
+  --card-foreground: oklch(0.95 0.008 200);
+  --popover: oklch(0.21 0.015 220);
+  --popover-foreground: oklch(0.95 0.008 200);
+  --primary: oklch(0.72 0.1 190);
+  --primary-foreground: oklch(0.18 0.02 220);
+  --secondary: oklch(0.27 0.03 200);
+  --secondary-foreground: oklch(0.92 0.02 195);
+  --muted: oklch(0.25 0.015 220);
+  --muted-foreground: oklch(0.7 0.02 210);
+  --accent: oklch(0.29 0.04 190);
+  --accent-foreground: oklch(0.95 0.008 200);
+  --destructive: oklch(0.7 0.17 22);
+  --destructive-foreground: oklch(0.18 0.02 220);
+  --success: oklch(0.72 0.13 155);
+  --success-foreground: oklch(0.18 0.02 220);
+  --warning: oklch(0.8 0.13 80);
+  --warning-foreground: oklch(0.25 0.05 60);
+  --info: oklch(0.72 0.1 240);
+  --info-foreground: oklch(0.18 0.02 220);
+  --anon: oklch(0.75 0.1 285);
+  --anon-foreground: oklch(0.18 0.02 220);
+  --logo-1: #4ab9b2;
+  --logo-2: #a7e0da;
+  --logo-teks: #e9f0f0;
+  --border: oklch(0.3 0.015 220);
+  --input: oklch(0.32 0.015 220);
+  --ring: oklch(0.65 0.09 190);
+  --chart-1: oklch(0.72 0.1 190);
+  --chart-2: oklch(0.78 0.13 75);
+  --chart-3: oklch(0.72 0.11 285);
+  --chart-4: oklch(0.7 0.15 25);
+  --chart-5: oklch(0.72 0.11 145);
+  --sidebar: oklch(0.19 0.015 220);
+  --sidebar-foreground: oklch(0.95 0.008 200);
+  --sidebar-primary: oklch(0.72 0.1 190);
+  --sidebar-primary-foreground: oklch(0.18 0.02 220);
+  --sidebar-accent: oklch(0.27 0.03 200);
+  --sidebar-accent-foreground: oklch(0.95 0.008 200);
+  --sidebar-border: oklch(0.3 0.015 220);
+  --sidebar-ring: oklch(0.65 0.09 190);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    @apply font-sans;
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* ------------------------------------------------------------------ animasi landing
+   MOTION 2 (diminta pemilik produk). Setiap gerak punya tujuan:
+   - .anim-muncul   : urutan baca hero saat halaman dibuka (sekali, ±0,6 dtk)
+   - .anim-mengetik : indikator "Guru BK sedang mengetik" di kartu contoh, tampil sebentar lalu hilang
+   - .anim-gulir    : baris & gelembung muncul mengikuti posisi scroll (memudar balik saat digulir ke atas)
+   Tidak ada animasi tanpa akhir. Semua dimatikan bila pengguna memilih "kurangi animasi". */
+
+@keyframes sibk-muncul {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes sibk-sekilas {
+  0% {
+    opacity: 0;
+  }
+  15%,
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes sibk-titik {
+  0%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.45;
+  }
+  50% {
+    transform: translateY(-3px);
+    opacity: 1;
+  }
+}
+
+.anim-muncul {
+  animation: sibk-muncul 600ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  animation-delay: var(--tunda, 0ms);
+}
+
+.anim-mengetik {
+  animation: sibk-sekilas 1100ms ease both;
+  animation-delay: var(--tunda, 0ms);
+}
+
+.anim-mengetik .titik {
+  animation: sibk-titik 550ms ease-in-out 2;
+  animation-delay: calc(var(--tunda, 0ms) + var(--urut, 0ms));
+}
+
+/* Animasi berbasis scroll: hanya di browser yang mendukung; browser lain menampilkan konten apa adanya. */
+@supports (animation-timeline: view()) {
+  .anim-gulir {
+    animation: sibk-muncul linear both;
+    animation-timeline: view();
+    animation-range: entry 5% cover 25%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .anim-muncul,
+  .anim-gulir,
+  .anim-mengetik .titik {
+    animation: none !important;
+  }
+  .anim-mengetik {
+    animation: none !important;
+    display: none;
+  }
+}

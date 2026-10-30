@@ -1,0 +1,179 @@
+// Skema Drizzle SIBK (PostgreSQL) — mengikuti docs/PRD.md §8 (revisi ERD proposal).
+//
+// Semua tabel memakai .enableRLS() TANPA policy: Data API publik Supabase (anon key) tidak bisa
+// membaca/menulis apa pun. Aplikasi terhubung sebagai role pemilik tabel sehingga tidak terkena RLS.
+// Tabel ditambahkan bertahap per sprint:
+//   Sprint 1: users, sesi, guru_bk, kelas, siswa, kategori_masalah, kode_otp   ← file ini
+//   Sprint 2: pengaduan, tanggapan
+//   Sprint 3: slot_jadwal, jadwal_konseling, notifikasi, pengaturan
+//   Sprint 4: catatan_konseling
+import { relations, sql } from "drizzle-orm"
+import {
+  bigint,
+  boolean,
+  char,
+  index,
+  pgEnum,
+  pgTable,
+  smallint,
+  text,
+  timestamp,
+  uniqueIndex,
+  varchar,
+} from "drizzle-orm/pg-core"
+
+const id = () => bigint("id", { mode: "number" }).primaryKey().generatedAlwaysAsIdentity()
+const fk = (name: string) => bigint(name, { mode: "number" })
+// timestamptz: disimpan UTC, ditampilkan dalam WIB di lapisan tampilan (KNF-07).
+const waktu = (name: string) => timestamp(name, { withTimezone: true, mode: "date" })
+const createdAt = () => waktu("created_at").notNull().defaultNow()
+const updatedAt = () =>
+  waktu("updated_at")
+    .notNull()
+    .defaultNow()
+    .$onUpdate(() => new Date())
+
+export const PERAN = ["admin", "guru_bk", "siswa"] as const
+export type Peran = (typeof PERAN)[number]
+export const peranEnum = pgEnum("peran", PERAN)
+
+export const JENIS_KELAMIN = ["L", "P"] as const
+export const jenisKelaminEnum = pgEnum("jenis_kelamin", JENIS_KELAMIN)
+
+/** Tabel 3.9 (+ username, is_active, harus_ganti_password, updated_at) */
+export const users = pgTable("users", {
+  id: id(),
+  /** NIS untuk siswa, NIP untuk Guru BK, bebas untuk admin */
+  username: varchar("username", { length: 50 }).notNull().unique(),
+  nama: varchar("nama", { length: 100 }).notNull(),
+  /** Selalu disimpan huruf kecil (dinormalisasi di validasi) */
+  email: varchar("email", { length: 100 }).unique(),
+  noWhatsapp: varchar("no_whatsapp", { length: 20 }),
+  password: varchar("password", { length: 255 }).notNull(),
+  role: peranEnum("role").notNull(),
+  isActive: boolean("is_active").notNull().default(true),
+  harusGantiPassword: boolean("harus_ganti_password").notNull().default(false),
+  /** Kontak yang diisi admin dianggap terverifikasi; yang diubah pengguna sendiri wajib dikonfirmasi lewat OTP. */
+  emailTerverifikasiPada: waktu("email_terverifikasi_pada"),
+  waTerverifikasiPada: waktu("wa_terverifikasi_pada"),
+  createdAt: createdAt(),
+  updatedAt: updatedAt(),
+}).enableRLS()
+
+/** Tambahan: sesi login (token disimpan sebagai hash SHA-256) */
+export const sesi = pgTable(
+  "sesi",
+  {
+    id: id(),
+    userId: fk("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    tokenHash: char("token_hash", { length: 64 }).notNull().unique(),
+    expiresAt: waktu("expires_at").notNull(),
+    ip: varchar("ip", { length: 45 }),
+    userAgent: varchar("user_agent", { length: 255 }),
+    createdAt: createdAt(),
+  },
+  (t) => [index("sesi_user_idx").on(t.userId)]
+).enableRLS()
+
+/** Tabel 3.11 */
+export const guruBk = pgTable("guru_bk", {
+  id: id(),
+  userId: fk("user_id")
+    .notNull()
+    .unique()
+    .references(() => users.id, { onDelete: "cascade" }),
+  nip: varchar("nip", { length: 30 }).notNull().unique(),
+}).enableRLS()
+
+/** Tabel 3.12 — nama kelas selalu disimpan huruf kapital (dinormalisasi di validasi) */
+export const kelas = pgTable("kelas", {
+  id: id(),
+  guruBkId: fk("guru_bk_id").references(() => guruBk.id, { onDelete: "set null" }),
+  namaKelas: varchar("nama_kelas", { length: 30 }).notNull().unique(),
+  jurusan: varchar("jurusan", { length: 50 }).notNull(),
+}).enableRLS()
+
+/** Tabel 3.10 */
+export const siswa = pgTable(
+  "siswa",
+  {
+    id: id(),
+    userId: fk("user_id")
+      .notNull()
+      .unique()
+      .references(() => users.id, { onDelete: "cascade" }),
+    kelasId: fk("kelas_id")
+      .notNull()
+      .references(() => kelas.id, { onDelete: "restrict" }),
+    nis: varchar("nis", { length: 20 }).notNull().unique(),
+    jenisKelamin: jenisKelaminEnum("jenis_kelamin").notNull(),
+  },
+  (t) => [index("siswa_kelas_idx").on(t.kelasId)]
+).enableRLS()
+
+/** Tabel 3.13 (+ is_active). Nama unik tanpa membedakan huruf besar/kecil. */
+export const kategoriMasalah = pgTable(
+  "kategori_masalah",
+  {
+    id: id(),
+    namaKategori: varchar("nama_kategori", { length: 50 }).notNull(),
+    deskripsi: text("deskripsi"),
+    isActive: boolean("is_active").notNull().default(true),
+  },
+  (t) => [uniqueIndex("kategori_masalah_nama_kategori_unique").on(sql`lower(${t.namaKategori})`)]
+).enableRLS()
+
+export const KANAL_OTP = ["email", "whatsapp"] as const
+export const kanalOtpEnum = pgEnum("kanal_otp", KANAL_OTP)
+export const KEPERLUAN_OTP = ["verifikasi_email", "verifikasi_wa", "reset_password"] as const
+export const keperluanOtpEnum = pgEnum("keperluan_otp", KEPERLUAN_OTP)
+
+/** Tambahan: kode OTP 6 digit (disimpan sebagai hash) untuk verifikasi kontak & lupa password. */
+export const kodeOtp = pgTable(
+  "kode_otp",
+  {
+    id: id(),
+    userId: fk("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    keperluan: keperluanOtpEnum("keperluan").notNull(),
+    kanal: kanalOtpEnum("kanal").notNull(),
+    /** Alamat email / nomor WA tujuan saat kode dibuat (kode batal bila kontak berubah) */
+    tujuan: varchar("tujuan", { length: 100 }).notNull(),
+    kodeHash: char("kode_hash", { length: 64 }).notNull(),
+    percobaan: smallint("percobaan").notNull().default(0),
+    kedaluwarsaPada: waktu("kedaluwarsa_pada").notNull(),
+    dipakaiPada: waktu("dipakai_pada"),
+    createdAt: createdAt(),
+  },
+  (t) => [index("kode_otp_user_idx").on(t.userId, t.keperluan)]
+).enableRLS()
+
+// ---------------------------------------------------------------- relasi
+
+export const usersRelations = relations(users, ({ one, many }) => ({
+  siswa: one(siswa, { fields: [users.id], references: [siswa.userId] }),
+  guruBk: one(guruBk, { fields: [users.id], references: [guruBk.userId] }),
+  sesi: many(sesi),
+}))
+
+export const sesiRelations = relations(sesi, ({ one }) => ({
+  user: one(users, { fields: [sesi.userId], references: [users.id] }),
+}))
+
+export const guruBkRelations = relations(guruBk, ({ one, many }) => ({
+  user: one(users, { fields: [guruBk.userId], references: [users.id] }),
+  kelasBinaan: many(kelas),
+}))
+
+export const kelasRelations = relations(kelas, ({ one, many }) => ({
+  pembina: one(guruBk, { fields: [kelas.guruBkId], references: [guruBk.id] }),
+  siswa: many(siswa),
+}))
+
+export const siswaRelations = relations(siswa, ({ one }) => ({
+  user: one(users, { fields: [siswa.userId], references: [users.id] }),
+  kelas: one(kelas, { fields: [siswa.kelasId], references: [kelas.id] }),
+}))

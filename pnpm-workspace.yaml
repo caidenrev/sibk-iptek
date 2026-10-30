@@ -1,0 +1,10 @@
+packages: []
+
+allowBuilds:
+  esbuild: true
+  lightningcss: true
+  unrs-resolver: true
+  msw: false
+
+minimumReleaseAgeExclude:
+  - nitro@3.0.261029-rc

@@ -31,11 +31,14 @@ import { Route as GuruSlotRouteImport } from './routes/guru/slot'
 import { Route as SiswaIndexRouteImport } from './routes/siswa/index'
 import { Route as AdminSiswaIndexRouteImport } from './routes/admin/siswa/index'
 import { Route as AdminSiswaImportRouteImport } from './routes/admin/siswa/import'
+import { Route as ApiLampiranKodeRouteImport } from './routes/api/lampiran.$kode'
 import { Route as GuruJadwalIndexRouteImport } from './routes/guru/jadwal/index'
 import { Route as GuruPengaduanIndexRouteImport } from './routes/guru/pengaduan/index'
+import { Route as GuruPengaduanKodeRouteImport } from './routes/guru/pengaduan/$kode'
 import { Route as SiswaJadwalIndexRouteImport } from './routes/siswa/jadwal/index'
 import { Route as SiswaJadwalAjukanRouteImport } from './routes/siswa/jadwal/ajukan'
 import { Route as SiswaPengaduanIndexRouteImport } from './routes/siswa/pengaduan/index'
+import { Route as SiswaPengaduanKodeRouteImport } from './routes/siswa/pengaduan/$kode'
 import { Route as SiswaPengaduanBaruRouteImport } from './routes/siswa/pengaduan/baru'
 
 const IndexRoute = IndexRouteImport.update({
@@ -148,6 +151,11 @@ const AdminSiswaImportRoute = AdminSiswaImportRouteImport.update({
   path: '/siswa/import',
   getParentRoute: () => AdminRouteRoute,
 } as any)
+const ApiLampiranKodeRoute = ApiLampiranKodeRouteImport.update({
+  id: '/api/lampiran/$kode',
+  path: '/api/lampiran/$kode',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const GuruJadwalIndexRoute = GuruJadwalIndexRouteImport.update({
   id: '/jadwal/',
   path: '/jadwal/',
@@ -156,6 +164,11 @@ const GuruJadwalIndexRoute = GuruJadwalIndexRouteImport.update({
 const GuruPengaduanIndexRoute = GuruPengaduanIndexRouteImport.update({
   id: '/pengaduan/',
   path: '/pengaduan/',
+  getParentRoute: () => GuruRouteRoute,
+} as any)
+const GuruPengaduanKodeRoute = GuruPengaduanKodeRouteImport.update({
+  id: '/pengaduan/$kode',
+  path: '/pengaduan/$kode',
   getParentRoute: () => GuruRouteRoute,
 } as any)
 const SiswaJadwalIndexRoute = SiswaJadwalIndexRouteImport.update({
@@ -171,6 +184,11 @@ const SiswaJadwalAjukanRoute = SiswaJadwalAjukanRouteImport.update({
 const SiswaPengaduanIndexRoute = SiswaPengaduanIndexRouteImport.update({
   id: '/pengaduan/',
   path: '/pengaduan/',
+  getParentRoute: () => SiswaRouteRoute,
+} as any)
+const SiswaPengaduanKodeRoute = SiswaPengaduanKodeRouteImport.update({
+  id: '/pengaduan/$kode',
+  path: '/pengaduan/$kode',
   getParentRoute: () => SiswaRouteRoute,
 } as any)
 const SiswaPengaduanBaruRoute = SiswaPengaduanBaruRouteImport.update({
@@ -201,7 +219,10 @@ export interface FileRoutesByFullPath {
   '/guru/': typeof GuruIndexRoute
   '/siswa/': typeof SiswaIndexRoute
   '/admin/siswa/import': typeof AdminSiswaImportRoute
+  '/api/lampiran/$kode': typeof ApiLampiranKodeRoute
+  '/guru/pengaduan/$kode': typeof GuruPengaduanKodeRoute
   '/siswa/jadwal/ajukan': typeof SiswaJadwalAjukanRoute
+  '/siswa/pengaduan/$kode': typeof SiswaPengaduanKodeRoute
   '/siswa/pengaduan/baru': typeof SiswaPengaduanBaruRoute
   '/admin/siswa/': typeof AdminSiswaIndexRoute
   '/guru/jadwal/': typeof GuruJadwalIndexRoute
@@ -228,7 +249,10 @@ export interface FileRoutesByTo {
   '/guru': typeof GuruIndexRoute
   '/siswa': typeof SiswaIndexRoute
   '/admin/siswa/import': typeof AdminSiswaImportRoute
+  '/api/lampiran/$kode': typeof ApiLampiranKodeRoute
+  '/guru/pengaduan/$kode': typeof GuruPengaduanKodeRoute
   '/siswa/jadwal/ajukan': typeof SiswaJadwalAjukanRoute
+  '/siswa/pengaduan/$kode': typeof SiswaPengaduanKodeRoute
   '/siswa/pengaduan/baru': typeof SiswaPengaduanBaruRoute
   '/admin/siswa': typeof AdminSiswaIndexRoute
   '/guru/jadwal': typeof GuruJadwalIndexRoute
@@ -259,7 +283,10 @@ export interface FileRoutesById {
   '/guru/': typeof GuruIndexRoute
   '/siswa/': typeof SiswaIndexRoute
   '/admin/siswa/import': typeof AdminSiswaImportRoute
+  '/api/lampiran/$kode': typeof ApiLampiranKodeRoute
+  '/guru/pengaduan/$kode': typeof GuruPengaduanKodeRoute
   '/siswa/jadwal/ajukan': typeof SiswaJadwalAjukanRoute
+  '/siswa/pengaduan/$kode': typeof SiswaPengaduanKodeRoute
   '/siswa/pengaduan/baru': typeof SiswaPengaduanBaruRoute
   '/admin/siswa/': typeof AdminSiswaIndexRoute
   '/guru/jadwal/': typeof GuruJadwalIndexRoute
@@ -291,7 +318,10 @@ export interface FileRouteTypes {
     | '/guru/'
     | '/siswa/'
     | '/admin/siswa/import'
+    | '/api/lampiran/$kode'
+    | '/guru/pengaduan/$kode'
     | '/siswa/jadwal/ajukan'
+    | '/siswa/pengaduan/$kode'
     | '/siswa/pengaduan/baru'
     | '/admin/siswa/'
     | '/guru/jadwal/'
@@ -318,7 +348,10 @@ export interface FileRouteTypes {
     | '/guru'
     | '/siswa'
     | '/admin/siswa/import'
+    | '/api/lampiran/$kode'
+    | '/guru/pengaduan/$kode'
     | '/siswa/jadwal/ajukan'
+    | '/siswa/pengaduan/$kode'
     | '/siswa/pengaduan/baru'
     | '/admin/siswa'
     | '/guru/jadwal'
@@ -348,7 +381,10 @@ export interface FileRouteTypes {
     | '/guru/'
     | '/siswa/'
     | '/admin/siswa/import'
+    | '/api/lampiran/$kode'
+    | '/guru/pengaduan/$kode'
     | '/siswa/jadwal/ajukan'
+    | '/siswa/pengaduan/$kode'
     | '/siswa/pengaduan/baru'
     | '/admin/siswa/'
     | '/guru/jadwal/'
@@ -367,6 +403,7 @@ export interface RootRouteChildren {
   LupaPasswordRoute: typeof LupaPasswordRoute
   ProfilRoute: typeof ProfilRoute
   ApiHealthRoute: typeof ApiHealthRoute
+  ApiLampiranKodeRoute: typeof ApiLampiranKodeRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -525,6 +562,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminSiswaImportRouteImport
       parentRoute: typeof AdminRouteRoute
     }
+    '/api/lampiran/$kode': {
+      id: '/api/lampiran/$kode'
+      path: '/api/lampiran/$kode'
+      fullPath: '/api/lampiran/$kode'
+      preLoaderRoute: typeof ApiLampiranKodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/guru/jadwal/': {
       id: '/guru/jadwal/'
       path: '/jadwal'
@@ -537,6 +581,13 @@ declare module '@tanstack/react-router' {
       path: '/pengaduan'
       fullPath: '/guru/pengaduan/'
       preLoaderRoute: typeof GuruPengaduanIndexRouteImport
+      parentRoute: typeof GuruRouteRoute
+    }
+    '/guru/pengaduan/$kode': {
+      id: '/guru/pengaduan/$kode'
+      path: '/pengaduan/$kode'
+      fullPath: '/guru/pengaduan/$kode'
+      preLoaderRoute: typeof GuruPengaduanKodeRouteImport
       parentRoute: typeof GuruRouteRoute
     }
     '/siswa/jadwal/': {
@@ -558,6 +609,13 @@ declare module '@tanstack/react-router' {
       path: '/pengaduan'
       fullPath: '/siswa/pengaduan/'
       preLoaderRoute: typeof SiswaPengaduanIndexRouteImport
+      parentRoute: typeof SiswaRouteRoute
+    }
+    '/siswa/pengaduan/$kode': {
+      id: '/siswa/pengaduan/$kode'
+      path: '/pengaduan/$kode'
+      fullPath: '/siswa/pengaduan/$kode'
+      preLoaderRoute: typeof SiswaPengaduanKodeRouteImport
       parentRoute: typeof SiswaRouteRoute
     }
     '/siswa/pengaduan/baru': {
@@ -602,6 +660,7 @@ interface GuruRouteRouteChildren {
   GuruLaporanRoute: typeof GuruLaporanRoute
   GuruSlotRoute: typeof GuruSlotRoute
   GuruIndexRoute: typeof GuruIndexRoute
+  GuruPengaduanKodeRoute: typeof GuruPengaduanKodeRoute
   GuruJadwalIndexRoute: typeof GuruJadwalIndexRoute
   GuruPengaduanIndexRoute: typeof GuruPengaduanIndexRoute
 }
@@ -610,6 +669,7 @@ const GuruRouteRouteChildren: GuruRouteRouteChildren = {
   GuruLaporanRoute: GuruLaporanRoute,
   GuruSlotRoute: GuruSlotRoute,
   GuruIndexRoute: GuruIndexRoute,
+  GuruPengaduanKodeRoute: GuruPengaduanKodeRoute,
   GuruJadwalIndexRoute: GuruJadwalIndexRoute,
   GuruPengaduanIndexRoute: GuruPengaduanIndexRoute,
 }
@@ -621,6 +681,7 @@ const GuruRouteRouteWithChildren = GuruRouteRoute._addFileChildren(
 interface SiswaRouteRouteChildren {
   SiswaIndexRoute: typeof SiswaIndexRoute
   SiswaJadwalAjukanRoute: typeof SiswaJadwalAjukanRoute
+  SiswaPengaduanKodeRoute: typeof SiswaPengaduanKodeRoute
   SiswaPengaduanBaruRoute: typeof SiswaPengaduanBaruRoute
   SiswaJadwalIndexRoute: typeof SiswaJadwalIndexRoute
   SiswaPengaduanIndexRoute: typeof SiswaPengaduanIndexRoute
@@ -629,6 +690,7 @@ interface SiswaRouteRouteChildren {
 const SiswaRouteRouteChildren: SiswaRouteRouteChildren = {
   SiswaIndexRoute: SiswaIndexRoute,
   SiswaJadwalAjukanRoute: SiswaJadwalAjukanRoute,
+  SiswaPengaduanKodeRoute: SiswaPengaduanKodeRoute,
   SiswaPengaduanBaruRoute: SiswaPengaduanBaruRoute,
   SiswaJadwalIndexRoute: SiswaJadwalIndexRoute,
   SiswaPengaduanIndexRoute: SiswaPengaduanIndexRoute,
@@ -648,6 +710,7 @@ const rootRouteChildren: RootRouteChildren = {
   LupaPasswordRoute: LupaPasswordRoute,
   ProfilRoute: ProfilRoute,
   ApiHealthRoute: ApiHealthRoute,
+  ApiLampiranKodeRoute: ApiLampiranKodeRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

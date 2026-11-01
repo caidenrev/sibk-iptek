@@ -31,12 +31,17 @@ export const LABEL_PERAN: Record<Peran, string> = {
 /** Semua path halaman yang terdaftar — salah ketik path jadi error saat compile. */
 export type AppPath = Exclude<keyof FileRoutesByTo, `/api/${string}`>
 
+/** Sub-menu: halaman yang sama dengan induknya, dibedakan lewat search param. */
+export type NavChild = { title: string; search: Record<string, string> }
+
 export type NavItem = {
   title: string
   to: AppPath
   icon: LucideIcon
   /** cocokkan path persis (untuk halaman dashboard di root peran) */
   exact?: boolean
+  /** anak pertama = tampilan bawaan saat search param kosong */
+  children?: Array<NavChild>
 }
 
 export type NavGroup = { label?: string; items: Array<NavItem> }
@@ -44,20 +49,34 @@ export type NavGroup = { label?: string; items: Array<NavItem> }
 // Menu per peran — docs/DESIGN.md §4
 export const NAV: Record<Peran, Array<NavGroup>> = {
   siswa: [
+    { items: [{ title: "Beranda", to: "/siswa", icon: Home, exact: true }] },
     {
+      label: "Pengaduan",
       items: [
-        { title: "Beranda", to: "/siswa", icon: Home, exact: true },
         { title: "Kirim Pengaduan", to: "/siswa/pengaduan/baru", icon: MessageSquareHeart },
         { title: "Pengaduan Saya", to: "/siswa/pengaduan", icon: MessagesSquare },
-        { title: "Jadwal Konseling", to: "/siswa/jadwal", icon: CalendarDays },
       ],
+    },
+    {
+      label: "Konseling",
+      items: [{ title: "Jadwal Konseling", to: "/siswa/jadwal", icon: CalendarDays }],
     },
   ],
   guru_bk: [
+    { items: [{ title: "Dashboard", to: "/guru", icon: LayoutDashboard, exact: true }] },
     {
+      label: "Pengaduan",
       items: [
-        { title: "Dashboard", to: "/guru", icon: LayoutDashboard, exact: true },
-        { title: "Pengaduan Masuk", to: "/guru/pengaduan", icon: Inbox },
+        {
+          title: "Pengaduan Masuk",
+          to: "/guru/pengaduan",
+          icon: Inbox,
+          children: [
+            { title: "Antrean anonim", search: { tab: "antrean" } },
+            { title: "Milik saya", search: { tab: "saya" } },
+            { title: "Semua pengaduan", search: { tab: "semua" } },
+          ],
+        },
       ],
     },
     {

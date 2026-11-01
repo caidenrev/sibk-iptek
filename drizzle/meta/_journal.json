@@ -15,6 +15,13 @@
       "when": 1793353125464,
       "tag": "0001_faithful_crusher_hogan",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793529744490,
+      "tag": "0002_tiresome_amphibian",
+      "breakpoints": true
     }
   ]
 }

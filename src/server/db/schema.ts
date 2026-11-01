@@ -4,7 +4,7 @@
 // membaca/menulis apa pun. Aplikasi terhubung sebagai role pemilik tabel sehingga tidak terkena RLS.
 // Tabel ditambahkan bertahap per sprint:
 //   Sprint 1: users, sesi, guru_bk, kelas, siswa, kategori_masalah, kode_otp   ← file ini
-//   Sprint 2: pengaduan, tanggapan
+//   Sprint 2: pengaduan, tanggapan   ← sudah ditambahkan
 //   Sprint 3: slot_jadwal, jadwal_konseling, notifikasi, pengaturan
 //   Sprint 4: catatan_konseling
 import { relations, sql } from "drizzle-orm"
@@ -149,6 +149,74 @@ export const kodeOtp = pgTable(
     createdAt: createdAt(),
   },
   (t) => [index("kode_otp_user_idx").on(t.userId, t.keperluan)]
+).enableRLS()
+
+// ---------------------------------------------------------------- Sprint 2: pengaduan
+
+export const URGENSI = ["rendah", "sedang", "tinggi"] as const
+export const urgensiEnum = pgEnum("tingkat_urgensi", URGENSI)
+export const STATUS_PENGADUAN = ["baru", "diproses", "selesai"] as const
+export const statusPengaduanEnum = pgEnum("status_pengaduan", STATUS_PENGADUAN)
+export const PENGIRIM_TANGGAPAN = ["siswa", "guru_bk"] as const
+export const pengirimTanggapanEnum = pgEnum("pengirim_tanggapan", PENGIRIM_TANGGAPAN)
+
+/**
+ * Tabel 3.14 (+ revisi PRD §6/§8).
+ * Kerahasiaan dijaga di tingkat data: pada aduan anonim `siswa_id` NULL, sehingga query apa pun
+ * yang menggabungkan ke tabel siswa tidak mungkin mengembalikan identitas. Pemilik dikenali lewat
+ * `pengirim_hash` (HMAC, untuk riwayat) dan `pengirim_terenkripsi` (AES-256-GCM, untuk notifikasi).
+ */
+export const pengaduan = pgTable(
+  "pengaduan",
+  {
+    id: id(),
+    kodeTiket: varchar("kode_tiket", { length: 12 }).notNull().unique(),
+    /** Terisi untuk aduan beridentitas, atau setelah siswa memilih membuka identitas (Sprint 3) */
+    siswaId: fk("siswa_id").references(() => siswa.id, { onDelete: "set null" }),
+    pengirimHash: char("pengirim_hash", { length: 64 }).notNull(),
+    pengirimTerenkripsi: text("pengirim_terenkripsi").notNull(),
+    isAnonim: boolean("is_anonim").notNull(),
+    alias: varchar("alias", { length: 40 }),
+    kategoriId: fk("kategori_id")
+      .notNull()
+      .references(() => kategoriMasalah.id, { onDelete: "restrict" }),
+    /** NULL = belum ada penanggung jawab (antrean bersama Guru BK) */
+    guruBkId: fk("guru_bk_id").references(() => guruBk.id, { onDelete: "set null" }),
+    judul: varchar("judul", { length: 150 }).notNull(),
+    isi: text("isi").notNull(),
+    /** Kunci berkas di penyimpanan (bukan nama asli berkas, demi kerahasiaan) */
+    lampiran: varchar("lampiran", { length: 255 }),
+    lampiranTipe: varchar("lampiran_tipe", { length: 50 }),
+    tingkatUrgensi: urgensiEnum("tingkat_urgensi").notNull(),
+    status: statusPengaduanEnum("status").notNull().default("baru"),
+    identitasDibukaPada: waktu("identitas_dibuka_pada"),
+    /** Penanda "balasan baru": dibandingkan dengan waktu tanggapan terakhir dari pihak lawan */
+    dibacaSiswaPada: waktu("dibaca_siswa_pada"),
+    dibacaGuruPada: waktu("dibaca_guru_pada"),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    index("pengaduan_pengirim_idx").on(t.pengirimHash),
+    index("pengaduan_guru_idx").on(t.guruBkId, t.status),
+    index("pengaduan_dibuat_idx").on(t.createdAt),
+  ]
+).enableRLS()
+
+/** Tabel 3.15 (+ user_id penulis Guru BK). Pesan siswa tidak menyimpan user_id. */
+export const tanggapan = pgTable(
+  "tanggapan",
+  {
+    id: id(),
+    pengaduanId: fk("pengaduan_id")
+      .notNull()
+      .references(() => pengaduan.id, { onDelete: "cascade" }),
+    pengirim: pengirimTanggapanEnum("pengirim").notNull(),
+    userId: fk("user_id").references(() => users.id, { onDelete: "set null" }),
+    isi: text("isi").notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [index("tanggapan_pengaduan_idx").on(t.pengaduanId, t.createdAt)]
 ).enableRLS()
 
 // ---------------------------------------------------------------- relasi

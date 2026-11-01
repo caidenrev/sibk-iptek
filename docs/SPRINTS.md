@@ -84,7 +84,7 @@ sistem-bk/
 
 ---
 
-## Sprint 2 — Pengaduan anonim/beridentitas & tanggapan
+## Sprint 2 — Pengaduan anonim/beridentitas & tanggapan ✅ selesai · [hasil uji](hasil-uji/sprint-2.md)
 **Backlog:** PB-04, PB-05, PB-06 · **KF:** 03, 04, 05, 06
 
 | # | Tugas |
@@ -101,6 +101,8 @@ sistem-bk/
 | 2.10 | Notifikasi **in-app** saja (WA/email menyusul di Sprint 3, dengan antrean outbox yang sudah disiapkan) |
 
 **Black Box:** BB-03, BB-04, BB-05, BB-06 (bagian penyimpanan), BB-15, BB-16, BB-17
+
+**Catatan pelaksanaan:** lampiran disimpan di Supabase Storage (bucket privat), bukan disk server, karena Vercel tidak punya disk permanen. PDF hanya diterima pada mode beridentitas. Penanda belum dibaca memakai `dibaca_siswa_pada` / `dibaca_guru_pada` di tabel `pengaduan`. Dashboard siswa & Guru BK sudah memakai data asli; kartu jadwal menunggu Sprint 3.
 
 ---
 

@@ -47,7 +47,7 @@ SIBK adalah aplikasi web untuk layanan BK di SMK IPTEK Tangerang Selatan. Masala
 | Penjadwal | `node-cron` di proses server Node.js | Timezone **Asia/Jakarta** |
 | Laporan PDF | `@react-pdf/renderer` (server route) | |
 | Import siswa | `xlsx` (SheetJS) / CSV | |
-| Upload lampiran | Disimpan di disk server (di luar folder public) + `sharp` untuk hapus metadata EXIF foto | |
+| Upload lampiran | **[REVISI]** Supabase Storage (bucket privat, diakses lewat server) + `sharp` untuk hapus metadata EXIF foto. Saat pengembangan tanpa Storage, disimpan di disk di luar folder public | Vercel tidak punya disk permanen |
 | Package manager | pnpm | |
 
 > **Catatan deployment:** karena memakai cron di dalam proses server, aplikasi harus berjalan sebagai **server Node.js yang hidup terus** (VPS, server sekolah, atau hosting Node). Tidak cocok di hosting serverless murni (mis. Vercel), karena di sana cron tidak berjalan. Lihat Pertanyaan Terbuka Q1.
@@ -108,7 +108,7 @@ Kode KF mengikuti Tabel 3.2. Tambahan diberi tanda **[REVISI]**.
 - **[REVISI]** Tombol "Kirim tes notifikasi" supaya siswa bisa memastikan nomornya benar.
 
 ### 5.4 Pengaduan (KF-03, KF-04) — Sprint 2
-Form: mode (Anonim / Beridentitas), kategori, urgensi (rendah/sedang/tinggi), judul (≤150), isi (wajib, ≥20 karakter), lampiran opsional (JPG/PNG/PDF, ≤5 MB).
+Form: mode (Anonim / Beridentitas), kategori, urgensi (rendah/sedang/tinggi), judul (≤150), isi (wajib, ≥20 karakter), lampiran opsional (JPG/PNG/PDF, ≤5 MB). **[REVISI]** PDF hanya untuk mode beridentitas, karena metadata PDF bisa memuat nama penulis.
 
 Saat dikirim:
 - Dibuat **kode tiket** unik, format `BK-XXXXXX` (6 karakter acak tanpa huruf yang mirip seperti O/0, I/1).
@@ -123,7 +123,7 @@ Saat dikirim:
 - **[REVISI] Klaim aduan anonim:** Guru BK menekan "Tangani" pada aduan di antrean, lalu `guru_bk_id` terisi dan aduan pindah ke "Milik saya". Tanggapan pertama otomatis mengklaim. Guru BK lain hanya bisa membaca.
 - Siswa: riwayat pengaduan (termasuk yang anonim, ditemukan lewat `pengirim_hash`), cari dengan kode tiket (**wajib login**, keputusan diskusi), lihat percakapan, balas.
 - Setiap tanggapan baru memicu notifikasi `tanggapan` ke pihak lawan.
-- **[REVISI]** Penanda "belum dibaca" (`dibaca_pada`) di daftar.
+- **[REVISI]** Penanda "belum dibaca" di daftar, memakai `dibaca_siswa_pada` dan `dibaca_guru_pada` di tabel `pengaduan`: aduan ditandai belum dibaca bila pesan terakhir dari lawan bicara lebih baru dari waktu terakhir dibuka.
 - Aduan berstatus `selesai` tidak bisa dibalas lagi; siswa bisa membuat aduan baru.
 
 ### 5.6 Buka identitas (KNF-02) — Sprint 3 [REVISI]
@@ -228,9 +228,9 @@ Ancaman dan mitigasinya:
 
 **kategori_masalah**: id, nama_kategori, deskripsi, ➕`is_active`
 
-**pengaduan**: id, kode_tiket (unik), siswa_id (*null* jika anonim & belum dibuka), pengirim_terenkripsi, ➕`pengirim_hash` (CHAR(64), indeks), is_anonim, alias, kategori_id, ✏️`guru_bk_id` (*nullable*: null = di antrean anonim), judul, isi, lampiran, tingkat_urgensi, status (`baru|diproses|selesai`), ➕`identitas_dibuka_pada`, created_at, ➕`updated_at`
+**pengaduan**: id, kode_tiket (unik), siswa_id (*null* jika anonim & belum dibuka), pengirim_terenkripsi, ➕`pengirim_hash` (CHAR(64), indeks), is_anonim, alias, kategori_id, ✏️`guru_bk_id` (*nullable*: null = di antrean anonim), judul, isi, lampiran, tingkat_urgensi, status (`baru|diproses|selesai`), ➕`identitas_dibuka_pada`, ➕`dibaca_siswa_pada`, ➕`dibaca_guru_pada`, created_at, ➕`updated_at`
 
-**tanggapan**: id, pengaduan_id, pengirim (`siswa|guru_bk`), ➕`user_id` (*nullable*: penulis Guru BK; null untuk siswa anonim), isi, ➕`dibaca_pada`, created_at
+**tanggapan**: id, pengaduan_id, pengirim (`siswa|guru_bk`), ➕`user_id` (*nullable*: penulis Guru BK; null untuk siswa anonim), isi, created_at
 
 **slot_jadwal**: id, guru_bk_id, tanggal, jam_mulai, jam_selesai, lokasi, ✏️status (`tersedia|dipesan|ditutup`) · ➕ unik `(guru_bk_id, tanggal, jam_mulai)`
 

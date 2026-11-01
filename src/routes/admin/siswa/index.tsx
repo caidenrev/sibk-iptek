@@ -101,7 +101,7 @@ function HalamanSiswa() {
             onValueChange={(v) => navigate({ search: (s) => ({ ...s, kelasId: v === SEMUA ? undefined : Number(v), page: undefined }) })}
           >
             <SelectTrigger className="w-full sm:w-40" aria-label="Filter kelas">
-              <SelectValue />
+              <SelectValue>{kelas.find((k) => k.id === search.kelasId)?.nama ?? "Semua kelas"}</SelectValue>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value={SEMUA}>Semua kelas</SelectItem>
@@ -119,7 +119,7 @@ function HalamanSiswa() {
             }
           >
             <SelectTrigger className="w-full sm:w-40" aria-label="Filter status">
-              <SelectValue />
+              <SelectValue>{search.status ? { aktif: "Aktif", belum_login: "Belum login", nonaktif: "Nonaktif" }[search.status] : "Semua status"}</SelectValue>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value={SEMUA}>Semua status</SelectItem>

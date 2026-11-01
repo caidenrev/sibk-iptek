@@ -25,6 +25,11 @@ const schema = z.object({
   MAIL_FROM: z.string().default("SIBK SMK IPTEK <sibk@localhost>"),
   MAIL_REPLY_TO: z.string().optional(),
 
+  // Penyimpanan lampiran. Bila keduanya diisi → Supabase Storage (bucket privat "lampiran");
+  // bila kosong → folder lokal storage/lampiran (hanya untuk pengembangan; tidak bertahan di Vercel).
+  SUPABASE_URL: z.string().url().optional(),
+  SUPABASE_SECRET_KEY: z.string().optional(),
+
   // WhatsApp (Fonnte). Kosong = kanal WhatsApp tidak tersedia (mode log saat pengembangan).
   FONNTE_TOKEN: z.string().optional(),
 })

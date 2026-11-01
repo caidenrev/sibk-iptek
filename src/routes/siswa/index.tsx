@@ -1,32 +1,21 @@
 import { Link, createFileRoute } from "@tanstack/react-router"
-import { CalendarPlus, ChevronRight, Clock, MapPin, MessageSquareHeart } from "lucide-react"
+import { CalendarClock, CalendarPlus, ChevronRight, MessageSquareHeart } from "lucide-react"
 
 import { AnonBadge, KodeTiket, StatusBadge } from "@/components/app/status-badge"
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { formatRentangSesi } from "@/lib/format"
+import { formatTanggalPendek } from "@/lib/format"
+import { riwayatSiswaFn } from "@/server/functions/pengaduan"
 
 export const Route = createFileRoute("/siswa/")({
   head: () => ({ meta: [{ title: "Beranda · SIBK" }] }),
+  loader: () => riwayatSiswaFn(),
   component: DashboardSiswa,
 })
 
-// Data contoh Sprint 0 — diganti query sungguhan di Sprint 2–4.
-const CONTOH_ADUAN = [
-  { kode: "BK-7F3K9Q", judul: "Sering diejek teman sekelas", status: "diproses", anonim: true, balasanBaru: true },
-  { kode: "BK-M2P8XA", judul: "Bingung memilih tempat PKL", status: "baru", anonim: false, balasanBaru: false },
-]
-
-const CONTOH_JADWAL = {
-  mulai: "2026-11-04T03:00:00Z",
-  selesai: "2026-11-04T03:45:00Z",
-  guru: "Ibu Dewi Lestari",
-  lokasi: "Ruang BK 1",
-  status: "disetujui",
-}
-
 function DashboardSiswa() {
   const { user } = Route.useRouteContext()
+  const aktif = Route.useLoaderData().filter((p) => p.status !== "selesai")
   const nama = user.nama.split(" ")[0]
   return (
     <div className="mx-auto max-w-3xl">
@@ -53,21 +42,12 @@ function DashboardSiswa() {
 
       <Card className="mt-6">
         <CardHeader>
-          <CardTitle>Jadwal berikutnya</CardTitle>
+          <CardTitle>Jadwal konseling</CardTitle>
+          <CardDescription>Pengajuan jadwal tatap muka dan pengingat otomatis sedang dibangun (Sprint 3).</CardDescription>
           <CardAction>
-            <StatusBadge status={CONTOH_JADWAL.status} />
+            <CalendarClock className="size-5 text-muted-foreground" aria-hidden />
           </CardAction>
         </CardHeader>
-        <CardContent className="grid gap-2 text-sm">
-          <p className="flex items-center gap-2 font-medium">
-            <Clock className="size-4 text-muted-foreground" aria-hidden />
-            {formatRentangSesi(CONTOH_JADWAL.mulai, CONTOH_JADWAL.selesai)}
-          </p>
-          <p className="flex items-center gap-2 text-muted-foreground">
-            <MapPin className="size-4" aria-hidden />
-            {CONTOH_JADWAL.lokasi} · {CONTOH_JADWAL.guru}
-          </p>
-        </CardContent>
       </Card>
 
       <Card className="mt-6">
@@ -81,26 +61,34 @@ function DashboardSiswa() {
           </CardAction>
         </CardHeader>
         <CardContent className="px-0">
+          {aktif.length === 0 && (
+            <p className="px-4 pb-2 text-sm text-muted-foreground">
+              Belum ada pengaduan aktif. Kalau ada yang mengganjal, kamu bisa mulai dari tombol Kirim pengaduan di atas.
+            </p>
+          )}
           <ul className="divide-y">
-            {CONTOH_ADUAN.map((a) => (
-              <li key={a.kode}>
+            {aktif.slice(0, 4).map((a) => (
+              <li key={a.kodeTiket}>
                 <Link
-                  to="/siswa/pengaduan"
+                  to="/siswa/pengaduan/$kode"
+                  params={{ kode: a.kodeTiket }}
                   className="flex items-center gap-3 px-4 py-3 transition-colors outline-none hover:bg-muted/60 focus-visible:bg-muted"
                 >
                   <span className="grid min-w-0 flex-1 gap-1">
                     <span className="flex flex-wrap items-center gap-2">
-                      <KodeTiket kode={a.kode} className="text-xs whitespace-nowrap text-muted-foreground" />
-                      {a.anonim && <AnonBadge />}
+                      <KodeTiket kode={a.kodeTiket} className="text-xs whitespace-nowrap text-muted-foreground" />
+                      {a.isAnonim && <AnonBadge />}
                     </span>
                     <span className="truncate font-medium">{a.judul}</span>
                     <span className="flex flex-wrap items-center gap-2">
                       <StatusBadge status={a.status} />
-                      {a.balasanBaru && (
+                      {a.balasanBaru ? (
                         <span className="flex items-center gap-1.5 text-xs font-medium text-primary">
                           <span className="size-2 rounded-full bg-primary" aria-hidden />
                           Balasan baru
                         </span>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">Diperbarui {formatTanggalPendek(a.updatedAt)}</span>
                       )}
                     </span>
                   </span>
@@ -111,7 +99,6 @@ function DashboardSiswa() {
           </ul>
         </CardContent>
       </Card>
-      <p className="mt-4 text-center text-xs text-muted-foreground">Data di halaman ini masih contoh (Sprint 0).</p>
     </div>
   )
 }

@@ -134,3 +134,33 @@ export const lupaPasswordResetSchema = z
     path: ["passwordBaru"],
     message: "Password tidak boleh sama dengan NIS/NIP/username",
   })
+
+// ----------------------------------------------------------------- pengaduan (Sprint 2)
+
+export const kodeTiketSchema = z
+  .string()
+  .trim()
+  .toUpperCase()
+  .regex(/^BK-[A-Z0-9]{6}$/, "Kode tiket berformat BK-XXXXXX")
+
+/** Isian formulir pengaduan (lampiran dikirim terpisah sebagai File dalam FormData). */
+export const pengaduanSchema = z.object({
+  anonim: z.boolean(),
+  kategoriId: z.number({ message: "Pilih kategori" }).int().positive("Pilih kategori"),
+  urgensi: z.enum(["rendah", "sedang", "tinggi"], { message: "Pilih tingkat urgensi" }),
+  judul: z.string().trim().min(5, "Judul minimal 5 karakter").max(150, "Judul maksimal 150 karakter"),
+  isi: z
+    .string()
+    .trim()
+    .min(20, "Ceritakan minimal 20 karakter supaya Guru BK bisa memahami masalahnya")
+    .max(5000, "Maksimal 5.000 karakter"),
+})
+export type PengaduanInput = z.input<typeof pengaduanSchema>
+
+export const pesanSchema = z
+  .string()
+  .trim()
+  .min(1, "Tulis pesan terlebih dahulu")
+  .max(3000, "Pesan maksimal 3.000 karakter")
+
+export const balasanSchema = z.object({ kode: kodeTiketSchema, isi: pesanSchema })

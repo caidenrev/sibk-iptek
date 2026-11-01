@@ -1,6 +1,6 @@
-import { Link, useLocation, useRouter } from "@tanstack/react-router"
-import { logoutFn } from "@/server/functions/auth"
+import { Link, useLocation } from "@tanstack/react-router"
 import { Bell, LogOut, Plus, UserRound } from "lucide-react"
+import { AppSidebar, inisial, useKeluar } from "./app-sidebar"
 import { Logo } from "./logo"
 import { ThemeToggle } from "./theme-toggle"
 import type { NavItem, Peran } from "./nav"
@@ -17,87 +17,27 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarHeader,
-  SidebarInset,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarProvider,
-  SidebarRail,
-  SidebarTrigger,
-} from "@/components/ui/sidebar"
+import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { cn } from "@/lib/utils"
 
-export type ShellUser = { nama: string; role: Peran; keterangan?: string }
-
-function inisial(nama: string) {
-  return nama
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((s) => s[0]?.toUpperCase())
-    .join("")
-}
+export type ShellUser = { nama: string; role: Peran; keterangan?: string; email?: string | null }
 
 function flatNav(peran: Peran) {
   return NAV[peran].flatMap((g) => g.items)
 }
 
-export function AppShell({ user, children }: { user: ShellUser; children: React.ReactNode }) {
+/** Jumlah item belum dibaca per menu (mis. { "/siswa/pengaduan": 2 }). */
+export type Lencana = Partial<Record<NavItem["to"], number>>
+
+export function AppShell({ user, children, lencana }: { user: ShellUser; children: React.ReactNode; lencana?: Lencana }) {
   const { pathname } = useLocation()
   const all = flatNav(user.role)
   const current = all.find((i) => isNavActive(pathname, i, all))
   const isSiswa = user.role === "siswa"
 
   return (
-    <SidebarProvider>
-      <Sidebar collapsible="icon">
-        <SidebarHeader className="h-16 justify-center border-b border-sidebar-border px-3">
-          <Link to={NAV[user.role][0].items[0].to} className="rounded-md outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring">
-            <Logo className="group-data-[collapsible=icon]:[&>span:last-child]:hidden" />
-          </Link>
-        </SidebarHeader>
-        <SidebarContent>
-          {NAV[user.role].map((group, gi) => (
-            <SidebarGroup key={gi}>
-              {group.label && <SidebarGroupLabel>{group.label}</SidebarGroupLabel>}
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  {group.items.map((item) => (
-                    <SidebarMenuItem key={item.to}>
-                      <SidebarMenuButton asChild isActive={isNavActive(pathname, item, all)} tooltip={item.title}>
-                        <Link to={item.to}>
-                          <item.icon />
-                          <span>{item.title}</span>
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  ))}
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-          ))}
-        </SidebarContent>
-        <SidebarFooter>
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild isActive={pathname === "/profil"} tooltip="Profil">
-                <Link to="/profil">
-                  <UserRound />
-                  <span>Profil</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          </SidebarMenu>
-        </SidebarFooter>
-        <SidebarRail />
-      </Sidebar>
+    <SidebarProvider style={{ "--sidebar-width": "17rem", "--sidebar-width-icon": "4.5rem" } as React.CSSProperties}>
+      <AppSidebar user={user} lencana={lencana} />
 
       <SidebarInset>
         <header className="sticky top-0 z-20 flex h-16 shrink-0 items-center gap-2 border-b bg-background/90 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/75 md:px-6">
@@ -110,7 +50,10 @@ export function AppShell({ user, children }: { user: ShellUser; children: React.
           <div className="ml-auto flex items-center gap-1">
             <ThemeToggle />
             <NotifikasiPopover />
-            <UserMenu user={user} />
+            {/* Di desktop menu akun ada di kartu bawah sidebar */}
+            <div className="md:hidden">
+              <UserMenu user={user} />
+            </div>
           </div>
         </header>
 
@@ -119,7 +62,7 @@ export function AppShell({ user, children }: { user: ShellUser; children: React.
         </main>
       </SidebarInset>
 
-      {isSiswa && <SiswaBottomNav pathname={pathname} />}
+      {isSiswa && <SiswaBottomNav pathname={pathname} lencana={lencana} />}
     </SidebarProvider>
   )
 }
@@ -184,22 +127,12 @@ function UserMenu({ user }: { user: ShellUser }) {
   )
 }
 
-function useKeluar() {
-  const router = useRouter()
-  return async () => {
-    try {
-      await logoutFn()
-    } finally {
-      await router.navigate({ to: "/login" })
-    }
-  }
-}
-
-function SiswaBottomNav({ pathname }: { pathname: string }) {
+function SiswaBottomNav({ pathname, lencana }: { pathname: string; lencana?: Lencana }) {
   const [a, b, c, d] = SISWA_BOTTOM_NAV
   const all = SISWA_BOTTOM_NAV
   const item = (it: NavItem) => {
     const active = isNavActive(pathname, it, all) && pathname !== SISWA_AKSI_UTAMA.to
+    const n = lencana?.[it.to] ?? 0
     return (
       <Link
         key={it.to}
@@ -210,8 +143,12 @@ function SiswaBottomNav({ pathname }: { pathname: string }) {
           active && "text-primary"
         )}
       >
-        <it.icon className="size-5" aria-hidden />
+        <span className="relative">
+          <it.icon className="size-5" aria-hidden />
+          {n > 0 && <span className="absolute -top-0.5 -right-1 size-2.5 rounded-full bg-primary ring-2 ring-background" aria-hidden />}
+        </span>
         {it.title}
+        {n > 0 && <span className="sr-only">, {n} balasan baru</span>}
       </Link>
     )
   }

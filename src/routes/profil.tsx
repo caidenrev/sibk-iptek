@@ -18,6 +18,7 @@ import { wajibLogin } from "@/lib/guard"
 import { pesanError } from "@/lib/pesan-error"
 import { profilSchema } from "@/lib/validasi"
 import { updateProfilFn } from "@/server/functions/auth"
+import { IkonEmail, IkonWhatsApp } from "@/components/app/ikon-kontak"
 
 export const Route = createFileRoute("/profil")({
   beforeLoad: ({ context, location }) => wajibLogin(context, location),
@@ -97,6 +98,7 @@ function Profil() {
                         control={form.control}
                         name="noWhatsapp"
                         label="Nomor WhatsApp"
+                        ikon={<IkonWhatsApp />}
                         inputMode="tel"
                         autoComplete="tel"
                         placeholder="0812-3456-7890"
@@ -110,6 +112,7 @@ function Profil() {
                         control={form.control}
                         name="email"
                         label="Email"
+                        ikon={<IkonEmail alamat={String(form.watch("email") ?? "")} />}
                         type="email"
                         autoComplete="email"
                         placeholder="nama@email.com"

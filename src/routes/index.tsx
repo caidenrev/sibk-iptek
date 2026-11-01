@@ -4,6 +4,7 @@ import { ThemeToggle } from "@/components/app/theme-toggle"
 import { Button } from "@/components/ui/button"
 import { BERANDA_PERAN } from "@/lib/peran"
 import { cn } from "@/lib/utils"
+import { TombolPasang } from "@/components/app/pasang-aplikasi"
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -76,6 +77,7 @@ function Landing() {
               <Button asChild size="lg" variant="outline" className="h-11 px-5 text-base">
                 <a href="#cara-kerja">Lihat cara kerjanya</a>
               </Button>
+              <TombolPasang variant="ghost" className="h-11 px-4 text-base text-primary" />
             </div>
             {!user && (
               <p className="anim-muncul mt-4 text-sm text-muted-foreground" style={tunda(260)}>

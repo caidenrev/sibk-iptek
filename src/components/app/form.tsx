@@ -25,8 +25,9 @@ export function FormInput<T extends FieldValues>({
   description,
   className,
   disabled,
+  ikon,
   ...input
-}: Dasar<T> & Omit<React.ComponentProps<typeof Input>, "name" | "defaultValue" | "value" | "onChange">) {
+}: Dasar<T> & { ikon?: React.ReactNode } & Omit<React.ComponentProps<typeof Input>, "name" | "defaultValue" | "value" | "onChange">) {
   const id = useId()
   return (
     <Controller
@@ -34,7 +35,10 @@ export function FormInput<T extends FieldValues>({
       name={name}
       render={({ field, fieldState }) => (
         <Field data-invalid={fieldState.invalid} className={className}>
-          <FieldLabel htmlFor={id}>{label}</FieldLabel>
+          <FieldLabel htmlFor={id}>
+            {ikon}
+            {label}
+          </FieldLabel>
           <Input
             {...input}
             {...field}

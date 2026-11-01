@@ -1,28 +1,18 @@
 {
-  "name": "SIBK — Bimbingan Konseling SMK IPTEK",
-  "icons": [
-    {
-      "src": "/icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png"
-    },
-    {
-      "src": "/icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png"
-    },
-    {
-      "src": "/maskable-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
-    }
-  ],
+  "id": "/",
+  "name": "SIBK SMK IPTEK",
+  "short_name": "SIBK",
+  "description": "Layanan Bimbingan dan Konseling SMK IPTEK Tangerang Selatan: kirim pengaduan, boleh tanpa nama, dan atur jadwal dengan Guru BK.",
+  "lang": "id",
+  "start_url": "/login",
+  "scope": "/",
+  "display": "standalone",
   "theme_color": "#007373",
   "background_color": "#ffffff",
-  "display": "standalone",
-  "short_name": "SIBK",
-  "description": "Sistem Informasi Bimbingan Konseling SMK IPTEK Tangerang Selatan",
-  "start_url": "/",
-  "lang": "id"
+  "categories": ["education"],
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
 }

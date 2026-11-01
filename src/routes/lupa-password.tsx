@@ -1,6 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Link, createFileRoute, redirect, useRouter } from "@tanstack/react-router"
-import { ArrowLeft, KeyRound, Mail, MessageCircle } from "lucide-react"
+import { ArrowLeft, KeyRound } from "lucide-react"
+import { IkonEmail, IkonWhatsApp } from "@/components/app/ikon-kontak"
 import { useState } from "react"
 import { Controller, useForm } from "react-hook-form"
 import { toast } from "sonner"
@@ -145,12 +146,12 @@ function LangkahKanal({
     <FieldGroup>
       <RadioGroup value={nilai} onValueChange={(v) => setNilai(v as "email")} className="gap-2">
         {pilihan.map((p) => {
-          const Ikon = p.kanal === "email" ? Mail : MessageCircle
           return (
             <FieldLabel key={p.kanal} htmlFor={`kanal-${p.kanal}`} className="cursor-pointer">
               <Field orientation="horizontal" className="rounded-xl border p-3 has-data-[state=checked]:border-primary has-data-[state=checked]:bg-primary/5">
                 <RadioGroupItem value={p.kanal} id={`kanal-${p.kanal}`} />
-                <Ikon className="size-4 text-muted-foreground" aria-hidden />
+                {/* Alamat email di sini disamarkan (domain ikut tersamar), jadi email selalu memakai ikon amplop. */}
+                {p.kanal === "email" ? <IkonEmail className="size-5" /> : <IkonWhatsApp className="size-5" />}
                 <span className="grid leading-tight">
                   <span className="font-medium">{p.kanal === "email" ? "Email" : "WhatsApp"}</span>
                   <span className="font-mono text-xs text-muted-foreground">{p.label}</span>

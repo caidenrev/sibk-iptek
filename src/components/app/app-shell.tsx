@@ -2,6 +2,7 @@ import { Link, useLocation } from "@tanstack/react-router"
 import { Bell, LogOut, Plus, UserRound } from "lucide-react"
 import { AppSidebar, inisial, useKeluar } from "./app-sidebar"
 import { usePantauDataBaru } from "./pantau-data-baru"
+import { AjakanPasang } from "./pasang-aplikasi"
 import { Logo } from "./logo"
 import { ThemeToggle } from "./theme-toggle"
 import type { NavItem, Peran } from "./nav"
@@ -63,6 +64,7 @@ export function AppShell({ user, children, lencana }: { user: ShellUser; childre
         </header>
 
         <main className={cn("flex-1 px-4 py-6 md:px-8 md:py-8", isSiswa && "pb-28 md:pb-8")}>
+          {(pathname === "/siswa" || pathname === "/guru") && <AjakanPasang />}
           {children}
         </main>
       </SidebarInset>

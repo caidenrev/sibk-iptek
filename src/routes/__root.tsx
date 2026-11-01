@@ -1,5 +1,7 @@
 import { HeadContent, Link, Scripts, createRootRoute } from "@tanstack/react-router"
 import { ThemeProvider } from "next-themes"
+// Mendaftarkan service worker & mendengarkan izin pasang aplikasi (PWA) sejak halaman dimuat.
+import "@/lib/pwa"
 import { IndikatorMuat } from "@/components/app/indikator-muat"
 import { Toaster } from "@/components/ui/sonner"
 import { TooltipProvider } from "@/components/ui/tooltip"
@@ -28,6 +30,11 @@ export const Route = createRootRoute({
         content: "Sistem Informasi Bimbingan Konseling SMK IPTEK Tangerang Selatan.",
       },
       { name: "theme-color", content: "#007373" },
+      // Saat dipasang di iPhone (Tambah ke Layar Utama)
+      { name: "apple-mobile-web-app-capable", content: "yes" },
+      { name: "mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-title", content: "SIBK" },
+      { name: "apple-mobile-web-app-status-bar-style", content: "default" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },

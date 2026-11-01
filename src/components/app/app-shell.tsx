@@ -1,6 +1,7 @@
 import { Link, useLocation } from "@tanstack/react-router"
 import { Bell, LogOut, Plus, UserRound } from "lucide-react"
 import { AppSidebar, inisial, useKeluar } from "./app-sidebar"
+import { usePantauDataBaru } from "./pantau-data-baru"
 import { Logo } from "./logo"
 import { ThemeToggle } from "./theme-toggle"
 import type { NavItem, Peran } from "./nav"
@@ -34,6 +35,10 @@ export function AppShell({ user, children, lencana }: { user: ShellUser; childre
   const all = flatNav(user.role)
   const current = all.find((i) => isNavActive(pathname, i, all))
   const isSiswa = user.role === "siswa"
+
+  // Halaman percakapan dicek lebih sering supaya balasan terasa langsung muncul.
+  const diChat = /\/pengaduan\/BK-/i.test(pathname)
+  usePantauDataBaru(user.role !== "admin", diChat ? 5_000 : 15_000)
 
   return (
     <SidebarProvider style={{ "--sidebar-width": "17rem", "--sidebar-width-icon": "4.5rem" } as React.CSSProperties}>

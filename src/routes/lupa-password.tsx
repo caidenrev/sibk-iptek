@@ -17,6 +17,7 @@ import { Spinner } from "@/components/ui/spinner"
 import { BERANDA_PERAN } from "@/lib/peran"
 import { pesanError } from "@/lib/pesan-error"
 import { loginSchema, lupaPasswordResetSchema } from "@/lib/validasi"
+import { lupakanSesi } from "@/lib/sesi-klien"
 import { lupaPasswordCekFn, lupaPasswordKirimFn, lupaPasswordResetFn } from "@/server/functions/akun"
 
 export const Route = createFileRoute("/lupa-password")({
@@ -202,6 +203,7 @@ function LangkahKode({ username, kanal, onGanti }: { username: string; kanal: Ka
       onSubmit={form.handleSubmit(async (data) => {
         try {
           const r = await lupaPasswordResetFn({ data })
+          lupakanSesi()
           toast.success("Password baru tersimpan. Kamu sudah masuk.")
           await router.navigate({ to: BERANDA_PERAN[r.role] })
         } catch (e) {

@@ -6,6 +6,7 @@ import type { NavChild, NavItem, Peran } from "./nav"
 import { NAV, isNavActive } from "./nav"
 import type { Lencana, ShellUser } from "./app-shell"
 import { logoutFn } from "@/server/functions/auth"
+import { lupakanSesi } from "@/lib/sesi-klien"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import {
@@ -55,6 +56,7 @@ export function useKeluar() {
     try {
       await logoutFn()
     } finally {
+      lupakanSesi()
       await router.navigate({ to: "/login" })
     }
   }

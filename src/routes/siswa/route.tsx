@@ -6,9 +6,8 @@ import { lencanaFn } from "@/server/functions/pengaduan"
 
 export const Route = createFileRoute("/siswa")({
   beforeLoad: ({ context, location }) => wajibPeran(context, location, "siswa"),
-  // Jumlah belum dibaca untuk penanda menu; dimuat ulang setiap navigasi.
+  // Jumlah belum dibaca untuk penanda menu. Disegarkan oleh pemantau data baru (AppShell) dan halaman detail.
   loader: async ({ context }) => (context.terlarang ? { pengaduan: 0 } : lencanaFn()),
-  staleTime: 0,
   component: Layout,
 })
 

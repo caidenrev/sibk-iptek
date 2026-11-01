@@ -1,5 +1,6 @@
 import "@tanstack/react-start/server-only"
 import { and, eq, sql } from "drizzle-orm"
+import type { SQL } from "drizzle-orm"
 import { alias } from "drizzle-orm/pg-core"
 import { db } from "../db/client"
 import { indexDuplikat } from "../db/errors"
@@ -149,7 +150,7 @@ export type PengaduanUntukGuru = ReturnType<typeof keTampilanGuru>
 
 // ================================================================ percakapan
 
-export async function ambilPercakapan(pengaduanId: number) {
+export async function ambilPercakapan(pengaduanId: number | SQL) {
   return db
     .select({
       id: tanggapan.id,

@@ -14,6 +14,7 @@ import { Spinner } from "@/components/ui/spinner"
 import { BERANDA_PERAN, urlSesuaiPeran } from "@/lib/peran"
 import { pesanError } from "@/lib/pesan-error"
 import { loginSchema } from "@/lib/validasi"
+import { lupakanSesi } from "@/lib/sesi-klien"
 import { loginFn } from "@/server/functions/auth"
 
 export const Route = createFileRoute("/login")({
@@ -43,6 +44,7 @@ function Login() {
     setGalat(null)
     try {
       const hasil = await loginFn({ data })
+      lupakanSesi()
       if (hasil.harusGantiPassword) {
         await router.navigate({ to: "/ganti-password" })
       } else if (tujuan && urlSesuaiPeran(tujuan, hasil.role)) {

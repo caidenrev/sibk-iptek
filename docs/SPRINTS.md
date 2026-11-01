@@ -111,6 +111,7 @@ sistem-bk/
 
 | # | Tugas |
 |---|---|
+| 3.0 ✅ | **Performa & pembaruan otomatis.** Sesi disimpan 60 detik di browser (server tetap memeriksa sesi di setiap server function), data halaman di-cache 10 detik, query yang tidak saling bergantung dijalankan paralel, garis loading saat pindah halaman. Data baru muncul tanpa refresh lewat polling ringan `jejakFn` (jumlah aduan + `max(updated_at)`): 5 detik di halaman percakapan, 15 detik di halaman lain, berhenti saat tab tidak dilihat. Hasil ukur: pindah menu ±110 ms (sebelumnya menunggu cek sesi + lencana + data, ±0,5–1 detik); pengaduan baru tampil di dashboard Guru BK ≤ 15 detik, balasan tampil di percakapan ≤ 5 detik |
 | 3.1 | Skema: `slot_jadwal`, `jadwal_konseling`, `notifikasi`, `pengaturan` |
 | 3.2 | Guru BK: kalender slot, tambah/ubah/tutup, slot berulang, cegah tumpang tindih |
 | 3.3 | Siswa: wizard pengajuan; transaksi + row lock anti double-booking; batas 2 pengajuan aktif |

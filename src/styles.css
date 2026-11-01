@@ -252,3 +252,13 @@
     display: none;
   }
 }
+
+/* Garis loading navigasi (components/app/indikator-muat.tsx) */
+@keyframes sibk-muat {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(250%);
+  }
+}

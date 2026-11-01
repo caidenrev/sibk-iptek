@@ -96,15 +96,18 @@ export const detailSiswaFn = createServerFn({ method: "GET" })
     const p = await pengaduanMilikSiswa(data.kode, context.user.siswaId!)
     // Aduan milik siswa lain diperlakukan sama dengan tidak ada (BB-16).
     if (!p) return null
-    const [info] = await db
-      .select({ kategori: kategoriMasalah.namaKategori, penanggungJawab: users.nama })
-      .from(pengaduan)
-      .innerJoin(kategoriMasalah, eq(kategoriMasalah.id, pengaduan.kategoriId))
-      .leftJoin(guruBk, eq(guruBk.id, pengaduan.guruBkId))
-      .leftJoin(users, eq(users.id, guruBk.userId))
-      .where(eq(pengaduan.id, p.id))
-    const percakapan = await ambilPercakapan(p.id)
-    await db.update(pengaduan).set({ dibacaSiswaPada: sql`now()` }).where(eq(pengaduan.id, p.id))
+    // Tiga query ini tidak saling bergantung: dijalankan bersamaan supaya hanya menunggu satu kali.
+    const [[info], percakapan] = await Promise.all([
+      db
+        .select({ kategori: kategoriMasalah.namaKategori, penanggungJawab: users.nama })
+        .from(pengaduan)
+        .innerJoin(kategoriMasalah, eq(kategoriMasalah.id, pengaduan.kategoriId))
+        .leftJoin(guruBk, eq(guruBk.id, pengaduan.guruBkId))
+        .leftJoin(users, eq(users.id, guruBk.userId))
+        .where(eq(pengaduan.id, p.id)),
+      ambilPercakapan(p.id),
+      db.update(pengaduan).set({ dibacaSiswaPada: sql`now()` }).where(eq(pengaduan.id, p.id)),
+    ])
     return {
       kodeTiket: p.kodeTiket,
       isAnonim: p.isAnonim,
@@ -168,23 +171,24 @@ export const daftarGuruFn = createServerFn({ method: "GET" })
     }
     const where = and(...syarat)
 
-    const [{ total }] = await db.select({ total: count() }).from(pengaduan).where(where)
-    const rows = await queryPengaduanGuru()
-      .where(where)
-      // Urgensi tinggi & belum selesai di atas, lalu yang terbaru diperbarui (DESIGN §5.7).
-      .orderBy(
-        sql`case when ${pengaduan.status} <> 'selesai' and ${pengaduan.tingkatUrgensi} = 'tinggi' then 0 else 1 end`,
-        desc(pengaduan.updatedAt)
-      )
-      .limit(PER_HALAMAN)
-      .offset((data.page - 1) * PER_HALAMAN)
-
-    const jumlahTab = await db
-      .select({
-        antrean: sql<number>`count(*) filter (where ${pengaduan.guruBkId} is null and ${pengaduan.status} <> 'selesai')`.mapWith(Number),
-        saya: sql<number>`count(*) filter (where ${pengaduan.guruBkId} = ${saya ?? -1} and ${pengaduan.status} <> 'selesai')`.mapWith(Number),
-      })
-      .from(pengaduan)
+    const [[{ total }], rows, jumlahTab] = await Promise.all([
+      db.select({ total: count() }).from(pengaduan).where(where),
+      queryPengaduanGuru()
+        .where(where)
+        // Urgensi tinggi & belum selesai di atas, lalu yang terbaru diperbarui (DESIGN §5.7).
+        .orderBy(
+          sql`case when ${pengaduan.status} <> 'selesai' and ${pengaduan.tingkatUrgensi} = 'tinggi' then 0 else 1 end`,
+          desc(pengaduan.updatedAt)
+        )
+        .limit(PER_HALAMAN)
+        .offset((data.page - 1) * PER_HALAMAN),
+      db
+        .select({
+          antrean: sql<number>`count(*) filter (where ${pengaduan.guruBkId} is null and ${pengaduan.status} <> 'selesai')`.mapWith(Number),
+          saya: sql<number>`count(*) filter (where ${pengaduan.guruBkId} = ${saya ?? -1} and ${pengaduan.status} <> 'selesai')`.mapWith(Number),
+        })
+        .from(pengaduan),
+    ])
 
     return {
       rows: rows.map((r) => {
@@ -208,13 +212,16 @@ export const detailGuruFn = createServerFn({ method: "GET" })
   .validator(z.object({ kode: kodeTiketSchema }))
   .handler(async ({ data, context }) => {
     const saya = context.user.guruBkId
-    const v = await cariUntukGuru(data.kode, saya)
+    // Id hanya dipakai di server (keTampilanGuru sengaja tidak mengembalikannya).
+    const idAduan = sql`(select id from pengaduan where kode_tiket = ${data.kode})`
+    const [v, percakapan] = await Promise.all([
+      cariUntukGuru(data.kode, saya),
+      ambilPercakapan(idAduan),
+    ])
     if (!v) return null
-    const [{ id }] = await db.select({ id: pengaduan.id }).from(pengaduan).where(eq(pengaduan.kodeTiket, data.kode))
-    const percakapan = await ambilPercakapan(id)
     // Tanda "sudah dibaca" hanya diubah oleh penanggung jawab (atau siapa pun saat masih di antrean).
     if (v.milikSaya || v.diAntrean) {
-      await db.update(pengaduan).set({ dibacaGuruPada: sql`now()` }).where(eq(pengaduan.id, id))
+      await db.update(pengaduan).set({ dibacaGuruPada: sql`now()` }).where(eq(pengaduan.kodeTiket, data.kode))
     }
     return { ...v, percakapan: percakapan.map((t) => ({ ...t, guruNama: t.pengirim === "guru_bk" ? t.guruNama : null })) }
   })
@@ -306,46 +313,65 @@ export const lencanaFn = createServerFn({ method: "GET" })
     return { pengaduan: 0 }
   })
 
+/**
+ * Jejak perubahan: jumlah pengaduan + waktu perubahan terakhir yang terlihat oleh user ini.
+ * Browser menanyakannya berkala; data halaman baru dimuat ulang kalau jejaknya berubah.
+ * Semua aksi (aduan baru, balasan, klaim, ubah status) memperbarui `updated_at`.
+ */
+export const jejakFn = createServerFn({ method: "GET" })
+  .middleware([authMw])
+  .handler(async ({ context }) => {
+    const u = context.user
+    if (u.role === "admin") return { jejak: "" }
+    const [r] = await db
+      .select({ n: count(), terakhir: sql<string>`coalesce(max(${pengaduan.updatedAt})::text, '')` })
+      .from(pengaduan)
+      .where(u.role === "siswa" ? eq(pengaduan.pengirimHash, hashPengirim(u.siswaId ?? -1)) : undefined)
+    return { jejak: `${r.n}|${r.terakhir}` }
+  })
+
 // ================================================================ ringkasan dashboard Guru BK
 
 export const ringkasanGuruFn = createServerFn({ method: "GET" })
   .middleware([guruMw])
   .handler(async ({ context }) => {
     const saya = context.user.guruBkId ?? -1
-    const [angka] = await db
-      .select({
-        antrean: sql<number>`count(*) filter (where ${P.guruBkId} is null and ${P.status} <> 'selesai')`.mapWith(Number),
-        baru: sql<number>`count(*) filter (where ${P.status} = 'baru')`.mapWith(Number),
-        diprosesSaya: sql<number>`count(*) filter (where ${P.status} = 'diproses' and ${P.guruBkId} = ${saya})`.mapWith(Number),
-        mendesak: sql<number>`count(*) filter (where ${P.status} <> 'selesai' and "pengaduan"."tingkat_urgensi" = 'tinggi')`.mapWith(Number),
-      })
-      .from(pengaduan)
+    const [[angka], perKategori, terbaru] = await Promise.all([
+      db
+        .select({
+          antrean: sql<number>`count(*) filter (where ${P.guruBkId} is null and ${P.status} <> 'selesai')`.mapWith(Number),
+          baru: sql<number>`count(*) filter (where ${P.status} = 'baru')`.mapWith(Number),
+          diprosesSaya: sql<number>`count(*) filter (where ${P.status} = 'diproses' and ${P.guruBkId} = ${saya})`.mapWith(Number),
+          mendesak: sql<number>`count(*) filter (where ${P.status} <> 'selesai' and "pengaduan"."tingkat_urgensi" = 'tinggi')`.mapWith(Number),
+        })
+        .from(pengaduan),
 
-    // Pengaduan per kategori, bulan berjalan (WIB)
-    const perKategori = await db
-      .select({
-        kategori: kategoriMasalah.namaKategori,
-        jumlah: sql<number>`count(${pengaduan.id})`.mapWith(Number),
-      })
-      .from(kategoriMasalah)
-      .leftJoin(
-        pengaduan,
-        and(
-          eq(pengaduan.kategoriId, kategoriMasalah.id),
-          sql`${pengaduan.createdAt} >= date_trunc('month', now() at time zone 'Asia/Jakarta') at time zone 'Asia/Jakarta'`
+      // Pengaduan per kategori, bulan berjalan (WIB)
+      db
+        .select({
+          kategori: kategoriMasalah.namaKategori,
+          jumlah: sql<number>`count(${pengaduan.id})`.mapWith(Number),
+        })
+        .from(kategoriMasalah)
+        .leftJoin(
+          pengaduan,
+          and(
+            eq(pengaduan.kategoriId, kategoriMasalah.id),
+            sql`${pengaduan.createdAt} >= date_trunc('month', now() at time zone 'Asia/Jakarta') at time zone 'Asia/Jakarta'`
+          )
         )
-      )
-      .where(eq(kategoriMasalah.isActive, true))
-      .groupBy(kategoriMasalah.id, kategoriMasalah.namaKategori)
-      .orderBy(asc(kategoriMasalah.id))
+        .where(eq(kategoriMasalah.isActive, true))
+        .groupBy(kategoriMasalah.id, kategoriMasalah.namaKategori)
+        .orderBy(asc(kategoriMasalah.id)),
 
-    const terbaru = await queryPengaduanGuru()
-      .where(sql`${pengaduan.status} <> 'selesai'`)
-      .orderBy(
-        sql`case when ${pengaduan.tingkatUrgensi} = 'tinggi' then 0 else 1 end`,
-        desc(pengaduan.updatedAt)
-      )
-      .limit(5)
+      queryPengaduanGuru()
+        .where(sql`${pengaduan.status} <> 'selesai'`)
+        .orderBy(
+          sql`case when ${pengaduan.tingkatUrgensi} = 'tinggi' then 0 else 1 end`,
+          desc(pengaduan.updatedAt)
+        )
+        .limit(5),
+    ])
 
     return {
       angka,

@@ -1,15 +1,23 @@
 import { HeadContent, Link, Scripts, createRootRoute } from "@tanstack/react-router"
 import { ThemeProvider } from "next-themes"
+import { IndikatorMuat } from "@/components/app/indikator-muat"
 import { Toaster } from "@/components/ui/sonner"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { Button } from "@/components/ui/button"
 import { getSesiFn } from "@/server/functions/auth"
+import { sesiTersimpan, simpanSesi } from "@/lib/sesi-klien"
 
 import appCss from "../styles.css?url"
 
 export const Route = createRootRoute({
   // User yang sedang login tersedia di context semua rute (null bila belum login).
-  beforeLoad: async () => ({ user: await getSesiFn() }),
+  beforeLoad: async () => {
+    const tersimpan = sesiTersimpan()
+    if (tersimpan) return { user: tersimpan }
+    const user = await getSesiFn()
+    simpanSesi(user)
+    return { user }
+  },
   head: () => ({
     meta: [
       { charSet: "utf-8" },
@@ -57,6 +65,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       <body>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <TooltipProvider delayDuration={300}>
+            <IndikatorMuat />
             {children}
             <Toaster position="top-center" richColors closeButton />
           </TooltipProvider>

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { wajibLogin } from "@/lib/guard"
 import { BERANDA_PERAN } from "@/lib/peran"
+import { lupakanSesi } from "@/lib/sesi-klien"
 import { logoutFn } from "@/server/functions/auth"
 
 export const Route = createFileRoute("/ganti-password")({
@@ -39,6 +40,7 @@ function GantiPassword() {
             labelLama={wajib ? (user.role === "siswa" ? "Password awal (NIS)" : "Password awal") : "Password lama"}
             tombol="Simpan & lanjutkan"
             onBerhasil={async () => {
+              lupakanSesi()
               await router.navigate({ to: BERANDA_PERAN[user.role] })
             }}
           />
@@ -49,6 +51,7 @@ function GantiPassword() {
         className="text-muted-foreground"
         onClick={async () => {
           await logoutFn()
+          lupakanSesi()
           await router.navigate({ to: "/login" })
         }}
       >

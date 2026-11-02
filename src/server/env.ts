@@ -32,6 +32,10 @@ const schema = z.object({
 
   // WhatsApp (Fonnte). Kosong = kanal WhatsApp tidak tersedia (mode log saat pengembangan).
   FONNTE_TOKEN: z.string().optional(),
+  /** Kunci rahasia untuk endpoint /api/cron (dipanggil cron-job.org tiap menit). Minimal 24 karakter. */
+  CRON_SECRET: z.string().min(24).optional(),
+  /** Mode pengembangan: notifikasi otomatis hanya dicetak ke log, kecuali ini "true". Produksi selalu mengirim. */
+  NOTIF_KIRIM_NYATA: z.enum(["true", "false"]).default("false"),
 })
 
 const parsed = schema.safeParse(process.env)

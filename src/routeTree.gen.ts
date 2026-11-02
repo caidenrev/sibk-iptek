@@ -24,6 +24,7 @@ import { Route as AdminKelasRouteImport } from './routes/admin/kelas'
 import { Route as AdminLaporanRouteImport } from './routes/admin/laporan'
 import { Route as AdminNotifikasiRouteImport } from './routes/admin/notifikasi'
 import { Route as AdminPengaturanRouteImport } from './routes/admin/pengaturan'
+import { Route as ApiCronRouteImport } from './routes/api/cron'
 import { Route as ApiHealthRouteImport } from './routes/api/health'
 import { Route as GuruIndexRouteImport } from './routes/guru/index'
 import { Route as GuruLaporanRouteImport } from './routes/guru/laporan'
@@ -115,6 +116,11 @@ const AdminPengaturanRoute = AdminPengaturanRouteImport.update({
   id: '/pengaturan',
   path: '/pengaturan',
   getParentRoute: () => AdminRouteRoute,
+} as any)
+const ApiCronRoute = ApiCronRouteImport.update({
+  id: '/api/cron',
+  path: '/api/cron',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiHealthRoute = ApiHealthRouteImport.update({
   id: '/api/health',
@@ -212,6 +218,7 @@ export interface FileRoutesByFullPath {
   '/admin/laporan': typeof AdminLaporanRoute
   '/admin/notifikasi': typeof AdminNotifikasiRoute
   '/admin/pengaturan': typeof AdminPengaturanRoute
+  '/api/cron': typeof ApiCronRoute
   '/api/health': typeof ApiHealthRoute
   '/guru/laporan': typeof GuruLaporanRoute
   '/guru/slot': typeof GuruSlotRoute
@@ -242,6 +249,7 @@ export interface FileRoutesByTo {
   '/admin/laporan': typeof AdminLaporanRoute
   '/admin/notifikasi': typeof AdminNotifikasiRoute
   '/admin/pengaturan': typeof AdminPengaturanRoute
+  '/api/cron': typeof ApiCronRoute
   '/api/health': typeof ApiHealthRoute
   '/guru/laporan': typeof GuruLaporanRoute
   '/guru/slot': typeof GuruSlotRoute
@@ -276,6 +284,7 @@ export interface FileRoutesById {
   '/admin/laporan': typeof AdminLaporanRoute
   '/admin/notifikasi': typeof AdminNotifikasiRoute
   '/admin/pengaturan': typeof AdminPengaturanRoute
+  '/api/cron': typeof ApiCronRoute
   '/api/health': typeof ApiHealthRoute
   '/guru/laporan': typeof GuruLaporanRoute
   '/guru/slot': typeof GuruSlotRoute
@@ -311,6 +320,7 @@ export interface FileRouteTypes {
     | '/admin/laporan'
     | '/admin/notifikasi'
     | '/admin/pengaturan'
+    | '/api/cron'
     | '/api/health'
     | '/guru/laporan'
     | '/guru/slot'
@@ -341,6 +351,7 @@ export interface FileRouteTypes {
     | '/admin/laporan'
     | '/admin/notifikasi'
     | '/admin/pengaturan'
+    | '/api/cron'
     | '/api/health'
     | '/guru/laporan'
     | '/guru/slot'
@@ -374,6 +385,7 @@ export interface FileRouteTypes {
     | '/admin/laporan'
     | '/admin/notifikasi'
     | '/admin/pengaturan'
+    | '/api/cron'
     | '/api/health'
     | '/guru/laporan'
     | '/guru/slot'
@@ -402,6 +414,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   LupaPasswordRoute: typeof LupaPasswordRoute
   ProfilRoute: typeof ProfilRoute
+  ApiCronRoute: typeof ApiCronRoute
   ApiHealthRoute: typeof ApiHealthRoute
   ApiLampiranKodeRoute: typeof ApiLampiranKodeRoute
 }
@@ -512,6 +525,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/pengaturan'
       preLoaderRoute: typeof AdminPengaturanRouteImport
       parentRoute: typeof AdminRouteRoute
+    }
+    '/api/cron': {
+      id: '/api/cron'
+      path: '/api/cron'
+      fullPath: '/api/cron'
+      preLoaderRoute: typeof ApiCronRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/health': {
       id: '/api/health'
@@ -709,6 +729,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   LupaPasswordRoute: LupaPasswordRoute,
   ProfilRoute: ProfilRoute,
+  ApiCronRoute: ApiCronRoute,
   ApiHealthRoute: ApiHealthRoute,
   ApiLampiranKodeRoute: ApiLampiranKodeRoute,
 }

@@ -30,7 +30,7 @@ export async function akunUntukReset(username: string): Promise<AkunReset | null
     nama: u.nama,
     // Email bisa dipakai bila terverifikasi; di mode pengembangan email dicetak ke log.
     email: u.email && u.emailOk && (emailAktif() || process.env.NODE_ENV !== "production") ? u.email : null,
-    wa: u.wa && u.waOk && waAktif() ? u.wa : null,
+    wa: u.wa && u.waOk && (await waAktif()) ? u.wa : null,
   }
 }
 

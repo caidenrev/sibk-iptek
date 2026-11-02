@@ -39,7 +39,14 @@ Akun uji dari `pnpm db:seed` ikut tersimpan karena termasuk akun. Sebelum disera
 - [ ] Import siswa asli dari Excel. Password awal mereka sama dengan NIS dan wajib diganti saat login pertama.
 - [ ] Sesuaikan daftar kelas dan Guru BK pembinanya.
 
-## 3. Periksa sekali lagi
+## 3. Aktifkan notifikasi
+
+- [ ] Isi `CRON_SECRET` di Vercel dan buat jadwal tiap menit di cron-job.org (langkah lengkap: [CRON.md](CRON.md)).
+- [ ] Admin → Pengaturan Notifikasi: tempel token Fonnte milik nomor WhatsApp sekolah, lalu tekan **Uji koneksi**.
+- [ ] Kirim pesan uji ke email dan WhatsApp milik admin, pastikan keduanya sampai.
+- [ ] Pastikan kartu **Pengingat otomatis** menunjukkan "Terakhir berjalan kurang dari semenit lalu".
+
+## 4. Periksa sekali lagi
 
 - [ ] Login sebagai admin dan Guru BK berhasil dengan password baru.
 - [ ] Menu Pengaduan Masuk kosong.

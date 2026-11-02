@@ -106,7 +106,7 @@ sistem-bk/
 
 ---
 
-## Sprint 3 — Penjadwalan, buka identitas, notifikasi WA & email
+## Sprint 3 — Penjadwalan, buka identitas, notifikasi WA & email ✅ selesai · [hasil uji](hasil-uji/sprint-3.md)
 **Backlog:** PB-07 s.d. PB-11 · **KF:** 07, 08, 09, 10, 14
 
 | # | Tugas |
@@ -119,12 +119,12 @@ sistem-bk/
 | 3.3 ✅ | Siswa: wizard pengajuan; transaksi + row lock anti double-booking; batas 2 pengajuan aktif |
 | 3.4 ✅ | Guru BK: setujui/tolak (alasan wajib); slot kembali tersedia saat ditolak/batal |
 | 3.5 ✅ | Siswa: batalkan jadwal (≥ 2 jam sebelum sesi). Hasil uji: [sprint-3.md](hasil-uji/sprint-3.md) |
-| 3.6 | Alur **buka identitas** dari aduan anonim (PRD §5.6) |
-| 3.7 | Admin: pengaturan Fonnte & SMTP (secret terenkripsi) + uji koneksi |
-| 3.8 | Layanan notifikasi: outbox, adapter Fonnte & Nodemailer, template pesan (versi aman untuk aduan anonim) |
-| 3.9 | Cron 1 menit: buat pengingat H-1 & 1 jam (unique key anti-dobel), kirim antrean, retry 3× |
-| 3.10 | Admin: log notifikasi + kirim ulang; penerima disamarkan untuk notifikasi sensitif |
-| 3.11 | Tombol "Kirim tes notifikasi" di profil |
+| 3.6 ✅ | Alur **buka identitas** dari aduan anonim (PRD §5.6) |
+| 3.7 ✅ | Admin: token Fonnte (terenkripsi, dicek ke Fonnte sebelum disimpan) + uji koneksi + kirim pesan uji. **[REVISI]** SMTP tetap di env server karena terikat domain pengirim Resend; admin melihat statusnya |
+| 3.8 ✅ | Layanan notifikasi: outbox, adapter Fonnte & Nodemailer, template pesan (versi aman untuk aduan anonim) |
+| 3.9 ✅ | Cron 1 menit (endpoint `/api/cron`, dipanggil **cron-job.org**, lihat [CRON.md](CRON.md)): buat pengingat H-1 & 1 jam (unique key anti-dobel), kirim antrean, retry 3× |
+| 3.10 ✅ | Admin: log notifikasi + kirim ulang; penerima disamarkan untuk notifikasi sensitif |
+| 3.11 ✅ | Tombol "Kirim tes notifikasi" di profil |
 
 **Black Box:** BB-06 (notifikasi), BB-07, BB-08, BB-09, BB-18 s.d. BB-23
 

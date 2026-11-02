@@ -5,7 +5,7 @@
 // Tabel ditambahkan bertahap per sprint:
 //   Sprint 1: users, sesi, guru_bk, kelas, siswa, kategori_masalah, kode_otp   ← file ini
 //   Sprint 2: pengaduan, tanggapan   ← sudah ditambahkan
-//   Sprint 3: slot_jadwal, jadwal_konseling   ← sudah ditambahkan; notifikasi, pengaturan menyusul
+//   Sprint 3: slot_jadwal, jadwal_konseling, notifikasi, pengaturan   ← sudah ditambahkan
 //   Sprint 4: catatan_konseling
 import { relations, sql } from "drizzle-orm"
 import {
@@ -284,6 +284,63 @@ export const jadwalKonseling = pgTable(
     index("jadwal_siswa_idx").on(t.siswaId, t.status),
   ]
 ).enableRLS()
+
+// ---------------------------------------------------------------- Sprint 3: notifikasi & pengaturan
+
+export const KANAL = ["email", "whatsapp"] as const
+export type Kanal = (typeof KANAL)[number]
+export const kanalEnum = pgEnum("kanal_notifikasi", KANAL)
+export const STATUS_NOTIF = ["menunggu", "terkirim", "gagal", "dilewati"] as const
+export const statusNotifEnum = pgEnum("status_notifikasi", STATUS_NOTIF)
+
+/**
+ * Tabel 3.16 (revisi PRD §8: dari notifikasi_log menjadi antrean/outbox sekaligus log).
+ * Satu baris = satu pesan ke satu orang lewat satu kanal. Dikirim oleh endpoint cron
+ * (dan dicoba langsung saat kejadian). `kunci` mencegah pesan yang sama dibuat dua kali,
+ * misalnya pengingat saat cron berjalan dua kali pada menit yang sama (BB-21).
+ */
+export const notifikasi = pgTable(
+  "notifikasi",
+  {
+    id: id(),
+    userId: fk("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    kanal: kanalEnum("kanal").notNull(),
+    jenis: varchar("jenis", { length: 40 }).notNull(),
+    refTipe: varchar("ref_tipe", { length: 20 }),
+    refId: bigint("ref_id", { mode: "number" }),
+    /** Terkait aduan anonim: di log admin, penerima disamarkan (PRD §5.8) */
+    isSensitif: boolean("is_sensitif").notNull().default(false),
+    /** Alamat tujuan saat pesan dibuat (email / 62xxx) */
+    tujuan: varchar("tujuan", { length: 255 }).notNull(),
+    subjek: varchar("subjek", { length: 200 }),
+    pesan: text("pesan").notNull(),
+    html: text("html"),
+    kunci: varchar("kunci", { length: 120 }).notNull(),
+    status: statusNotifEnum("status").notNull().default("menunggu"),
+    percobaan: smallint("percobaan").notNull().default(0),
+    errorTerakhir: text("error_terakhir"),
+    dijadwalkanPada: waktu("dijadwalkan_pada").notNull().defaultNow(),
+    /** Penanda sedang dikirim oleh satu proses, agar dua proses tidak mengirim pesan yang sama */
+    diklaimPada: waktu("diklaim_pada"),
+    dikirimPada: waktu("dikirim_pada"),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    uniqueIndex("notifikasi_kunci_unik").on(t.userId, t.kanal, t.kunci),
+    index("notifikasi_antrean_idx").on(t.status, t.dijadwalkanPada),
+    index("notifikasi_dibuat_idx").on(t.createdAt),
+  ]
+).enableRLS()
+
+/** Pengaturan aplikasi yang bisa diubah admin (mis. token Fonnte). Nilai rahasia disimpan terenkripsi. */
+export const pengaturan = pgTable("pengaturan", {
+  kunci: varchar("kunci", { length: 60 }).primaryKey(),
+  nilai: text("nilai").notNull(),
+  isRahasia: boolean("is_rahasia").notNull().default(false),
+  updatedAt: updatedAt(),
+}).enableRLS()
 
 // ---------------------------------------------------------------- relasi
 

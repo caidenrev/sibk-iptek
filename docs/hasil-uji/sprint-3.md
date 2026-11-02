@@ -47,3 +47,36 @@ Akun uji: Guru BK Dewi Lestari (pembina XI RPL 1) dan Ahmad Fauzi, siswa `232410
 
 - Unit test (Vitest): **46 lulus** (bertambah 6: format tanggal slot dan perhitungan tanggal slot berulang).
 - Data uji (slot dan pengajuan) dihapus setelah pengujian.
+
+---
+
+# Bagian 2: Buka Identitas & Notifikasi WhatsApp/Email
+
+> Tanggal uji: 2 November 2026 · Mode pengembangan: notifikasi otomatis dicetak ke log server (akun uji memakai alamat domain sekolah), token Fonnte belum diisi. Pengiriman nyata diuji lewat pesan uji dan token sengaja salah ke API Fonnte.
+
+## Black Box Testing
+
+| ID | Skenario | Masukan | Hasil yang diharapkan | Hasil pengujian | Status |
+|---|---|---|---|---|---|
+| BB-06 | Guru BK menanggapi (bagian notifikasi) | Ahmad membalas aduan anonim milik siswa 232410001 | Notifikasi terkirim ke siswa | 2 notifikasi (email & WA) ke siswa pemilik aduan, dicari lewat ID terenkripsi. Pesan hanya memuat kode tiket, tanpa judul/isi aduan. Ditandai sensitif | Sesuai |
+| BB-08 | Konfirmasi jadwal | Guru BK menekan Setujui | Status Disetujui, WA & email terkirim | Status Disetujui; notifikasi `konfirmasi` (email & WA) ke siswa berisi waktu, lokasi, dan nama Guru BK. Pengajuan sebelumnya juga memicu notifikasi `pengajuan_jadwal` ke Guru BK | Sesuai |
+| BB-09 | Pengingat otomatis | Sesi disetujui < 24 jam lagi; sesi digeser ke 30 menit lagi | Pengingat terkirim & tercatat di log | Cron membuat `pengingat_h1` (4 pesan: siswa & Guru BK, email & WA), lalu `pengingat_1jam` (4 pesan) setelah sesi digeser. Semua tercatat di log notifikasi | Sesuai |
+| BB-21 | Pengingat tidak dobel | Cron dipanggil 2× bersamaan, lalu sekali lagi | Hanya satu pengingat per kanal | Panggilan bersamaan: satu membuat 4 pengingat, satu membuat 0; panggilan ketiga 0. Dijaga indeks unik `(user_id, kanal, kunci)` | Sesuai |
+| BB-22 | WA gateway gagal | Token Fonnte salah, kirim WA | Status Gagal setelah 3 percobaan, email tetap terkirim, bisa kirim ulang | Fonnte menjawab "invalid token"; percobaan 1 dan 2 dijadwalkan ulang, percobaan 3 berstatus **Gagal**; cron tidak mengulang pesan yang sudah gagal; tombol Kirim ulang mengantrekan lagi. Email dan WA adalah baris terpisah sehingga kegagalan WA tidak memengaruhi email | Sesuai |
+| BB-23 | Buka identitas | Siswa membuka identitas pada satu dari dua aduan anonimnya | Guru BK melihat nama untuk aduan itu saja; aduan anonim lain tetap tersamar | Dialog peringatan "tidak bisa dibatalkan", lalu diarahkan ke pengajuan jadwal dengan aduan tertaut. Guru BK lain (bukan pembina) melihat nama, NIS, kelas + keterangan "awalnya anonim" pada aduan itu; aduan kedua tetap alias. Respons server untuk aduan kedua tidak memuat nama, NIS, atau kelas. `is_anonim` tetap true untuk statistik | Sesuai |
+
+## Uji tambahan
+
+| Skenario | Hasil |
+|---|---|
+| Endpoint `/api/cron` tanpa kunci / kunci salah / kunci benar | 401 / 401 / 200 |
+| Log notifikasi admin untuk aduan anonim | "Penerima disamarkan (aduan anonim)"; `penerima` dan `tujuan` bernilai null sejak dari server |
+| Isi pesan di log admin | Tidak pernah dikirim ke halaman admin |
+| Kontak di log admin (notifikasi biasa) | Disamarkan: `0812-****-0002`, `ah******@s*****.id` |
+| Simpan token Fonnte yang salah | Ditolak sebelum disimpan: "Token ditolak Fonnte: token invalid" |
+| Uji koneksi Fonnte dengan token salah | "Gagal: token invalid" |
+| Hapus token lewat admin | Dialog konfirmasi, status kembali "Belum diatur" |
+| Status cron di halaman admin | "Terakhir berjalan 1 menit lalu" setelah endpoint dipanggil |
+| Tombol "Kirim tes notifikasi" di profil | Muncul bila ada kontak terverifikasi dan form tidak sedang diubah. Tidak ditekan saat uji karena alamat akun uji memakai domain sekolah |
+
+Data uji (2 aduan, 1 slot, 1 jadwal, 15 notifikasi, token uji) dihapus setelah pengujian.

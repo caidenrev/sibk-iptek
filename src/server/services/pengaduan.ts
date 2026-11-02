@@ -48,7 +48,7 @@ export async function buatPengaduan(siswaId: number, data: DataPengaduan, file: 
   for (let percobaan = 0; percobaan < 5; percobaan++) {
     const kodeTiket = buatKodeTiket()
     try {
-      await db.insert(pengaduan).values({
+      const [baru] = await db.insert(pengaduan).values({
         kodeTiket,
         siswaId: data.anonim ? null : siswaId,
         pengirimHash: hashPengirim(siswaId),
@@ -63,8 +63,8 @@ export async function buatPengaduan(siswaId: number, data: DataPengaduan, file: 
         lampiranTipe: berkas?.tipe ?? null,
         tingkatUrgensi: data.urgensi,
         dibacaSiswaPada: sql`now()`,
-      })
-      return { kodeTiket }
+      }).returning({ id: pengaduan.id })
+      return { kodeTiket, id: baru.id }
     } catch (e) {
       if (indexDuplikat(e) === "pengaduan_kode_tiket_unique") continue
       throw e

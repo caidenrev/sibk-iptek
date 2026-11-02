@@ -16,6 +16,7 @@ import {
   queryJadwal,
 } from "../services/jadwal"
 import { PesanError, guruMw, siswaMw } from "./middleware"
+import { picuNotifikasi } from "../services/notifikasi"
 import { ajukanJadwalSchema, idSchema, slotSchema, tanggalSchema, tolakJadwalSchema } from "@/lib/validasi"
 import { formatTanggalPendek, jamTitik } from "@/lib/format"
 import { geserTanggal, tanggalSlotBerulang } from "@/lib/tanggal"
@@ -208,6 +209,7 @@ export const setujuiJadwalFn = createServerFn({ method: "POST" })
       if (j.sudahMulai) throw new PesanError("Waktu sesi sudah lewat. Tolak pengajuan ini dan minta siswa mengajukan ulang.")
       await tx.update(jadwalKonseling).set({ status: "disetujui", diputuskanPada: sql`now()` }).where(eq(jadwalKonseling.id, data.id))
     })
+    await picuNotifikasi({ jenis: "konfirmasi", jadwalId: data.id })
     return { ok: true }
   })
 
@@ -227,6 +229,7 @@ export const tolakJadwalFn = createServerFn({ method: "POST" })
         .where(eq(jadwalKonseling.id, data.id))
       await tx.update(slotJadwal).set({ status: "tersedia" }).where(eq(slotJadwal.id, j.slotId))
     })
+    await picuNotifikasi({ jenis: "penolakan", jadwalId: data.id })
     return { ok: true }
   })
 
@@ -334,7 +337,7 @@ export const ajukanJadwalFn = createServerFn({ method: "POST" })
     const me = context.user.siswaId
     if (!me) throw new PesanError("Akun ini bukan akun siswa.")
     try {
-      return await db.transaction(async (tx) => {
+      const hasil = await db.transaction(async (tx) => {
         // Kunci baris siswa: dua pengajuan bersamaan dari siswa yang sama dihitung berurutan.
         await tx.select({ id: siswa.id }).from(siswa).where(eq(siswa.id, me)).for("update")
         const [{ aktif }] = await tx
@@ -372,6 +375,8 @@ export const ajukanJadwalFn = createServerFn({ method: "POST" })
         await tx.update(slotJadwal).set({ status: "dipesan" }).where(eq(slotJadwal.id, slot.id))
         return { id: j.id }
       })
+      await picuNotifikasi({ jenis: "pengajuan_jadwal", jadwalId: hasil.id })
+      return hasil
     } catch (e) {
       if (indexDuplikat(e) === "jadwal_satu_aktif_per_slot") throw new PesanError("Slot ini baru saja dipesan siswa lain. Pilih slot lain.")
       throw e
@@ -408,6 +413,7 @@ export const batalkanJadwalFn = createServerFn({ method: "POST" })
       await tx.update(jadwalKonseling).set({ status: "batal" }).where(eq(jadwalKonseling.id, data.id))
       await tx.update(slotJadwal).set({ status: "tersedia" }).where(eq(slotJadwal.id, j.slotId))
     })
+    await picuNotifikasi({ jenis: "pembatalan", jadwalId: data.id })
     return { ok: true }
   })
 

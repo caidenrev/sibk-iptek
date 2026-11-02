@@ -147,6 +147,11 @@ function DetailGuru() {
                   <dd className="tabular">{d.pengirim.nis}</dd>
                   <dt className="text-muted-foreground">Kelas</dt>
                   <dd>{d.pengirim.kelas}</dd>
+                  {d.pengirim.dariAnonim && (
+                    <dd className="col-span-2 mt-2 rounded-lg bg-anon/10 px-3 py-2 text-xs leading-relaxed text-anon dark:bg-anon/20">
+                      Awalnya dikirim anonim. Siswa membuka identitasnya untuk aduan ini agar bisa konseling tatap muka.
+                    </dd>
+                  )}
                 </dl>
               )}
             </CardContent>

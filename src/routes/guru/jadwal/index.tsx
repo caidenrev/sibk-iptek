@@ -1,5 +1,5 @@
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router"
-import { CalendarCheck, Check, MapPin, MessageSquareText, UserX, X } from "lucide-react"
+import { CalendarCheck, Check, MapPin, MessageSquareText, NotebookPen, UserX, X } from "lucide-react"
 import { useState } from "react"
 import { z } from "zod"
 import { PageHeader } from "@/components/app/page-header"
@@ -113,7 +113,11 @@ function KartuPengajuan({ jadwal: j, onTolak }: { jadwal: Jadwal; onTolak: (mode
     <article className="grid gap-4 rounded-2xl border bg-card p-4 md:grid-cols-[1fr_auto] md:items-start">
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-2">
-          <h2 className="font-semibold">{j.siswa.nama}</h2>
+          <h2 className="font-semibold">
+            <Link to="/guru/jadwal/$id" params={{ id: j.id }} className="rounded-sm underline-offset-4 outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring">
+              {j.siswa.nama}
+            </Link>
+          </h2>
           <span className="text-sm text-muted-foreground">
             {j.siswa.kelas} · <span className="tabular">{j.siswa.nis}</span>
           </span>
@@ -166,6 +170,13 @@ function KartuPengajuan({ jadwal: j, onTolak }: { jadwal: Jadwal; onTolak: (mode
                 <X data-icon="inline-start" /> Tolak
               </Button>
             </>
+          )}
+          {j.status === "selesai" && (
+            <Button asChild variant="outline" className="h-11 md:h-9">
+              <Link to="/guru/jadwal/$id" params={{ id: j.id }}>
+                <NotebookPen data-icon="inline-start" /> Catatan
+              </Link>
+            </Button>
           )}
           {j.status === "disetujui" && !j.sudahMulai && (
             <Button variant="outline" className="h-11 md:h-9" onClick={() => onTolak("batal")}>

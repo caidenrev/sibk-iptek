@@ -211,7 +211,7 @@ export const setAkunAktifFn = createServerFn({ method: "POST" })
 export const ringkasanAdminFn = createServerFn({ method: "GET" })
   .middleware([adminMw])
   .handler(async () => {
-    const [[s], [k], [g]] = await Promise.all([
+    const [[s], [k], [g], [n]] = await Promise.all([
       db
         .select({ n: sql<number>`count(*)`.mapWith(Number) })
         .from(siswa)
@@ -223,6 +223,13 @@ export const ringkasanAdminFn = createServerFn({ method: "GET" })
         .from(guruBk)
         .innerJoin(users, eq(users.id, guruBk.userId))
         .where(eq(users.isActive, true)),
+      // Kesehatan notifikasi 30 hari terakhir (pesan uji tidak dihitung).
+      db.execute<{ terkirim: number; gagal: number; dilewati: number; menunggu: number }>(sql`
+        select count(*) filter (where status = 'terkirim')::int as terkirim,
+               count(*) filter (where status = 'gagal')::int as gagal,
+               count(*) filter (where status = 'dilewati')::int as dilewati,
+               count(*) filter (where status = 'menunggu')::int as menunggu
+        from notifikasi where jenis <> 'tes' and created_at > now() - interval '30 days'`).then((r) => r.rows),
     ])
-    return { siswa: s.n, kelas: k.n, guru: g.n }
+    return { siswa: s.n, kelas: k.n, guru: g.n, notifikasi: n }
   })

@@ -6,7 +6,7 @@
 //   Sprint 1: users, sesi, guru_bk, kelas, siswa, kategori_masalah, kode_otp   ← file ini
 //   Sprint 2: pengaduan, tanggapan   ← sudah ditambahkan
 //   Sprint 3: slot_jadwal, jadwal_konseling, notifikasi, pengaturan   ← sudah ditambahkan
-//   Sprint 4: catatan_konseling
+//   Sprint 4: catatan_konseling   ← sudah ditambahkan
 import { relations, sql } from "drizzle-orm"
 import {
   bigint,
@@ -283,6 +283,31 @@ export const jadwalKonseling = pgTable(
       .where(sql`${t.status} in ('menunggu', 'disetujui')`),
     index("jadwal_siswa_idx").on(t.siswaId, t.status),
   ]
+).enableRLS()
+
+/**
+ * Tabel 3.17 (+ guru_bk_id, tampilkan_ke_siswa, perlu_lanjutan, updated_at). Satu catatan per sesi.
+ * Ringkasan masalah hanya untuk Guru BK penulisnya; siswa hanya melihat tindak lanjut bila
+ * `tampilkan_ke_siswa` dicentang (PRD §5.9). Admin tidak pernah bisa membacanya.
+ */
+export const catatanKonseling = pgTable(
+  "catatan_konseling",
+  {
+    id: id(),
+    jadwalId: fk("jadwal_id")
+      .notNull()
+      .references(() => jadwalKonseling.id, { onDelete: "cascade" }),
+    guruBkId: fk("guru_bk_id")
+      .notNull()
+      .references(() => guruBk.id, { onDelete: "cascade" }),
+    ringkasanMasalah: text("ringkasan_masalah").notNull(),
+    tindakLanjut: text("tindak_lanjut"),
+    tampilkanKeSiswa: boolean("tampilkan_ke_siswa").notNull().default(false),
+    perluLanjutan: boolean("perlu_lanjutan").notNull().default(false),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [uniqueIndex("catatan_satu_per_jadwal").on(t.jadwalId)]
 ).enableRLS()
 
 // ---------------------------------------------------------------- Sprint 3: notifikasi & pengaturan

@@ -126,6 +126,11 @@ sistem-bk/
 | 3.10 ✅ | Admin: log notifikasi + kirim ulang; penerima disamarkan untuk notifikasi sensitif |
 | 3.11 ✅ | Tombol "Kirim tes notifikasi" di profil |
 
+**Status di Vercel (2 Nov 2026):**
+- ✅ cron-job.org memanggil `/api/cron` tiap menit (uji coba: 200 `ok: true`).
+- ✅ Email notifikasi teruji lewat alur asli (aduan baru, tanggapan, pengajuan, konfirmasi, pengingat H-1 dari cron produksi), semua terkirim tanpa error ke alamat uji Gmail.
+- ⏳ WhatsApp menunggu token Fonnte (nomor pengirim khusus). Sebelum token diisi, kosongkan nomor WA contoh di akun uji agar pesan tidak terkirim ke nomor orang lain.
+
 **Black Box:** BB-06 (notifikasi), BB-07, BB-08, BB-09, BB-18 s.d. BB-23
 
 ---
@@ -136,9 +141,9 @@ sistem-bk/
 | # | Tugas |
 |---|---|
 | 4.1 | Skema: `catatan_konseling` |
-| 4.2 | Tandai sesi selesai / tidak hadir; form catatan (+ tampilkan tindak lanjut ke siswa) |
+| 4.2 | ~~Tandai sesi selesai / tidak hadir~~ (sudah di Sprint 3); form catatan (+ tampilkan tindak lanjut ke siswa) |
 | 4.3 | Siswa: riwayat konseling |
-| 4.4 | Dashboard siswa, Guru BK, admin (kartu + grafik) |
+| 4.4 | Dashboard siswa, Guru BK, admin (kartu + grafik). Sebagian sudah: kartu & grafik bulan berjalan memakai data asli (Sprint 2–3), kesehatan notifikasi admin dari tabel notifikasi. Sisa: grafik tren 6 bulan, sesi hari ini/riwayat |
 | 4.5 | Laporan: filter periode/kategori/Guru BK, ringkasan, **PDF** (kop sekolah), opsional Excel |
 | 4.6 | Profil lengkap (PB-15) |
 | 4.7 | Perbaikan dari Sprint Review 1–3, polishing responsif & aksesibilitas, cek kinerja (< 3 detik) |

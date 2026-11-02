@@ -146,6 +146,12 @@ function KartuJadwal({ jadwal: j, onBatal }: { jadwal: Jadwal; onBatal?: () => v
       {j.status === "menunggu" && !j.sudahLewat && (
         <p className="text-sm text-muted-foreground">Guru BK akan menyetujui atau memberi alasan bila tidak bisa.</p>
       )}
+      {j.tindakLanjut && (
+        <div className="rounded-lg bg-primary/5 px-3 py-2 text-sm dark:bg-primary/10">
+          <p className="font-medium">Tindak lanjut dari {j.guruNama.split(" ")[0]}</p>
+          <p className="mt-0.5 whitespace-pre-line">{j.tindakLanjut}</p>
+        </div>
+      )}
       {j.alasanPenolakan && (
         <p className="rounded-lg bg-muted px-3 py-2 text-sm">
           <span className="font-medium">Alasan dari Guru BK: </span>

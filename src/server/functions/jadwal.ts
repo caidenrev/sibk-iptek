@@ -4,7 +4,7 @@ import { and, asc, count, desc, eq, gte, inArray, lte, ne, sql } from "drizzle-o
 import { z } from "zod"
 import { db } from "../db/client"
 import { bentrokExclude, indexDuplikat, masihDipakai } from "../db/errors"
-import { guruBk, jadwalKonseling, kelas, pengaduan, siswa, slotJadwal, users } from "../db/schema"
+import { catatanKonseling, guruBk, jadwalKonseling, kelas, pengaduan, siswa, slotJadwal, users } from "../db/schema"
 import {
   AKTIF,
   BATAS_JAM,
@@ -17,7 +17,7 @@ import {
 } from "../services/jadwal"
 import { PesanError, guruMw, siswaMw } from "./middleware"
 import { picuNotifikasi } from "../services/notifikasi"
-import { ajukanJadwalSchema, idSchema, slotSchema, tanggalSchema, tolakJadwalSchema } from "@/lib/validasi"
+import { ajukanJadwalSchema, catatanSchema, idSchema, slotSchema, tanggalSchema, tolakJadwalSchema } from "@/lib/validasi"
 import { formatTanggalPendek, jamTitik } from "@/lib/format"
 import { geserTanggal, tanggalSlotBerulang } from "@/lib/tanggal"
 
@@ -389,10 +389,17 @@ export const jadwalSayaFn = createServerFn({ method: "GET" })
     const rows = await queryJadwal()
       .where(eq(jadwalKonseling.siswaId, context.user.siswaId ?? -1))
       .orderBy(desc(slotJadwal.tanggal), desc(slotJadwal.jamMulai))
+    // Hanya tindak lanjut yang dicentang "tampilkan ke siswa"; ringkasan masalah tidak pernah dikirim ke siswa.
+    const tindak = rows.length
+      ? await db
+          .select({ jadwalId: catatanKonseling.jadwalId, tindakLanjut: catatanKonseling.tindakLanjut })
+          .from(catatanKonseling)
+          .where(and(inArray(catatanKonseling.jadwalId, rows.map((r) => r.id)), eq(catatanKonseling.tampilkanKeSiswa, true)))
+      : []
     return rows.map((r) => {
       // Siswa tidak perlu melihat datanya sendiri dua kali; NIS & kelas tidak dikirim.
       const { siswa: _s, ...v } = keTampilanJadwal(r)
-      return v
+      return { ...v, tindakLanjut: tindak.find((t) => t.jadwalId === r.id)?.tindakLanjut ?? null }
     })
   })
 
@@ -428,4 +435,64 @@ export const jadwalBerikutnyaFn = createServerFn({ method: "GET" })
     if (!r) return null
     const { siswa: _s, ...v } = keTampilanJadwal(r)
     return v
+  })
+
+// ================================================================ Sprint 4: detail sesi & catatan
+
+/** Detail satu sesi untuk Guru BK pemilik slot, beserta catatan dan riwayat sesi siswa ini dengannya. */
+export const detailJadwalGuruFn = createServerFn({ method: "GET" })
+  .middleware([guruMw])
+  .validator(z.object({ id: idSchema }))
+  .handler(async ({ data, context }) => {
+    const saya = context.user.guruBkId ?? -1
+    const [r] = await queryJadwal().where(and(eq(jadwalKonseling.id, data.id), eq(slotJadwal.guruBkId, saya)))
+    if (!r) return null
+    const [catatan, riwayat] = await Promise.all([
+      db.select().from(catatanKonseling).where(and(eq(catatanKonseling.jadwalId, r.id), eq(catatanKonseling.guruBkId, saya))),
+      // Sesi lain siswa yang sama dengan Guru BK ini, beserta catatannya (catatan Guru BK lain tidak ikut).
+      queryJadwal()
+        .where(and(eq(jadwalKonseling.siswaId, r.siswaId), eq(slotJadwal.guruBkId, saya), ne(jadwalKonseling.id, r.id), inArray(jadwalKonseling.status, ["selesai", "tidak_hadir"])))
+        .orderBy(desc(slotJadwal.tanggal), desc(slotJadwal.jamMulai))
+        .limit(10),
+    ])
+    const catatanLain = riwayat.length
+      ? await db
+          .select({ jadwalId: catatanKonseling.jadwalId, ringkasan: catatanKonseling.ringkasanMasalah, tindakLanjut: catatanKonseling.tindakLanjut })
+          .from(catatanKonseling)
+          .where(and(inArray(catatanKonseling.jadwalId, riwayat.map((x) => x.id)), eq(catatanKonseling.guruBkId, saya)))
+      : []
+    const c = catatan[0]
+    return {
+      ...keTampilanJadwal(r),
+      catatan: c
+        ? { ringkasanMasalah: c.ringkasanMasalah, tindakLanjut: c.tindakLanjut ?? "", tampilkanKeSiswa: c.tampilkanKeSiswa, perluLanjutan: c.perluLanjutan, diperbarui: c.updatedAt }
+        : null,
+      riwayat: riwayat.map((x) => ({ ...keTampilanJadwal(x), catatan: catatanLain.find((cl) => cl.jadwalId === x.id) ?? null })),
+    }
+  })
+
+export const simpanCatatanFn = createServerFn({ method: "POST" })
+  .middleware([guruMw])
+  .validator(catatanSchema)
+  .handler(async ({ data, context }) => {
+    const saya = context.user.guruBkId ?? -1
+    const [j] = await db
+      .select({ status: jadwalKonseling.status })
+      .from(jadwalKonseling)
+      .innerJoin(slotJadwal, eq(slotJadwal.id, jadwalKonseling.slotId))
+      .where(and(eq(jadwalKonseling.id, data.jadwalId), eq(slotJadwal.guruBkId, saya)))
+    if (!j) throw new PesanError("Sesi tidak ditemukan.")
+    if (j.status !== "selesai") throw new PesanError("Catatan hanya bisa diisi untuk sesi yang sudah ditandai Selesai.")
+    const nilai = {
+      ringkasanMasalah: data.ringkasanMasalah,
+      tindakLanjut: data.tindakLanjut || null,
+      // Tanpa tindak lanjut, tidak ada yang bisa ditampilkan ke siswa.
+      tampilkanKeSiswa: data.tampilkanKeSiswa && !!data.tindakLanjut,
+      perluLanjutan: data.perluLanjutan,
+    }
+    await db
+      .insert(catatanKonseling)
+      .values({ jadwalId: data.jadwalId, guruBkId: saya, ...nilai })
+      .onConflictDoUpdate({ target: catatanKonseling.jadwalId, set: nilai })
+    return { ok: true }
   })

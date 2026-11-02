@@ -199,3 +199,23 @@ export const tolakJadwalSchema = z.object({
   id: idSchema,
   alasan: z.string().trim().min(5, "Tulis alasan minimal 5 karakter").max(500),
 })
+
+// ---------------------------------------------------------------- Sprint 4: catatan konseling
+
+export const catatanSchema = z.object({
+  jadwalId: idSchema,
+  ringkasanMasalah: z.string().trim().min(10, "Tulis ringkasan minimal 10 karakter").max(5000),
+  tindakLanjut: z.string().trim().max(2000).optional().default(""),
+  tampilkanKeSiswa: z.boolean().default(false),
+  perluLanjutan: z.boolean().default(false),
+})
+export type CatatanInput = z.input<typeof catatanSchema>
+
+export const filterLaporanSchema = z
+  .object({
+    dari: tanggalSchema,
+    sampai: tanggalSchema,
+    kategoriId: idSchema.optional(),
+    guruBkId: idSchema.optional(),
+  })
+  .refine((v) => v.dari <= v.sampai, { path: ["sampai"], message: "Tanggal akhir harus setelah tanggal awal" })

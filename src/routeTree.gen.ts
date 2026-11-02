@@ -26,6 +26,7 @@ import { Route as AdminNotifikasiRouteImport } from './routes/admin/notifikasi'
 import { Route as AdminPengaturanRouteImport } from './routes/admin/pengaturan'
 import { Route as ApiCronRouteImport } from './routes/api/cron'
 import { Route as ApiHealthRouteImport } from './routes/api/health'
+import { Route as ApiLaporanDotpdfRouteImport } from './routes/api/laporan[.]pdf'
 import { Route as GuruIndexRouteImport } from './routes/guru/index'
 import { Route as GuruLaporanRouteImport } from './routes/guru/laporan'
 import { Route as GuruSlotRouteImport } from './routes/guru/slot'
@@ -34,6 +35,7 @@ import { Route as AdminSiswaIndexRouteImport } from './routes/admin/siswa/index'
 import { Route as AdminSiswaImportRouteImport } from './routes/admin/siswa/import'
 import { Route as ApiLampiranKodeRouteImport } from './routes/api/lampiran.$kode'
 import { Route as GuruJadwalIndexRouteImport } from './routes/guru/jadwal/index'
+import { Route as GuruJadwalIdRouteImport } from './routes/guru/jadwal/$id'
 import { Route as GuruPengaduanIndexRouteImport } from './routes/guru/pengaduan/index'
 import { Route as GuruPengaduanKodeRouteImport } from './routes/guru/pengaduan/$kode'
 import { Route as SiswaJadwalIndexRouteImport } from './routes/siswa/jadwal/index'
@@ -127,6 +129,11 @@ const ApiHealthRoute = ApiHealthRouteImport.update({
   path: '/api/health',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiLaporanDotpdfRoute = ApiLaporanDotpdfRouteImport.update({
+  id: '/api/laporan.pdf',
+  path: '/api/laporan.pdf',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const GuruIndexRoute = GuruIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -165,6 +172,11 @@ const ApiLampiranKodeRoute = ApiLampiranKodeRouteImport.update({
 const GuruJadwalIndexRoute = GuruJadwalIndexRouteImport.update({
   id: '/jadwal/',
   path: '/jadwal/',
+  getParentRoute: () => GuruRouteRoute,
+} as any)
+const GuruJadwalIdRoute = GuruJadwalIdRouteImport.update({
+  id: '/jadwal/$id',
+  path: '/jadwal/$id',
   getParentRoute: () => GuruRouteRoute,
 } as any)
 const GuruPengaduanIndexRoute = GuruPengaduanIndexRouteImport.update({
@@ -220,6 +232,7 @@ export interface FileRoutesByFullPath {
   '/admin/pengaturan': typeof AdminPengaturanRoute
   '/api/cron': typeof ApiCronRoute
   '/api/health': typeof ApiHealthRoute
+  '/api/laporan.pdf': typeof ApiLaporanDotpdfRoute
   '/guru/laporan': typeof GuruLaporanRoute
   '/guru/slot': typeof GuruSlotRoute
   '/admin/': typeof AdminIndexRoute
@@ -227,6 +240,7 @@ export interface FileRoutesByFullPath {
   '/siswa/': typeof SiswaIndexRoute
   '/admin/siswa/import': typeof AdminSiswaImportRoute
   '/api/lampiran/$kode': typeof ApiLampiranKodeRoute
+  '/guru/jadwal/$id': typeof GuruJadwalIdRoute
   '/guru/pengaduan/$kode': typeof GuruPengaduanKodeRoute
   '/siswa/jadwal/ajukan': typeof SiswaJadwalAjukanRoute
   '/siswa/pengaduan/$kode': typeof SiswaPengaduanKodeRoute
@@ -251,6 +265,7 @@ export interface FileRoutesByTo {
   '/admin/pengaturan': typeof AdminPengaturanRoute
   '/api/cron': typeof ApiCronRoute
   '/api/health': typeof ApiHealthRoute
+  '/api/laporan.pdf': typeof ApiLaporanDotpdfRoute
   '/guru/laporan': typeof GuruLaporanRoute
   '/guru/slot': typeof GuruSlotRoute
   '/admin': typeof AdminIndexRoute
@@ -258,6 +273,7 @@ export interface FileRoutesByTo {
   '/siswa': typeof SiswaIndexRoute
   '/admin/siswa/import': typeof AdminSiswaImportRoute
   '/api/lampiran/$kode': typeof ApiLampiranKodeRoute
+  '/guru/jadwal/$id': typeof GuruJadwalIdRoute
   '/guru/pengaduan/$kode': typeof GuruPengaduanKodeRoute
   '/siswa/jadwal/ajukan': typeof SiswaJadwalAjukanRoute
   '/siswa/pengaduan/$kode': typeof SiswaPengaduanKodeRoute
@@ -286,6 +302,7 @@ export interface FileRoutesById {
   '/admin/pengaturan': typeof AdminPengaturanRoute
   '/api/cron': typeof ApiCronRoute
   '/api/health': typeof ApiHealthRoute
+  '/api/laporan.pdf': typeof ApiLaporanDotpdfRoute
   '/guru/laporan': typeof GuruLaporanRoute
   '/guru/slot': typeof GuruSlotRoute
   '/admin/': typeof AdminIndexRoute
@@ -293,6 +310,7 @@ export interface FileRoutesById {
   '/siswa/': typeof SiswaIndexRoute
   '/admin/siswa/import': typeof AdminSiswaImportRoute
   '/api/lampiran/$kode': typeof ApiLampiranKodeRoute
+  '/guru/jadwal/$id': typeof GuruJadwalIdRoute
   '/guru/pengaduan/$kode': typeof GuruPengaduanKodeRoute
   '/siswa/jadwal/ajukan': typeof SiswaJadwalAjukanRoute
   '/siswa/pengaduan/$kode': typeof SiswaPengaduanKodeRoute
@@ -322,6 +340,7 @@ export interface FileRouteTypes {
     | '/admin/pengaturan'
     | '/api/cron'
     | '/api/health'
+    | '/api/laporan.pdf'
     | '/guru/laporan'
     | '/guru/slot'
     | '/admin/'
@@ -329,6 +348,7 @@ export interface FileRouteTypes {
     | '/siswa/'
     | '/admin/siswa/import'
     | '/api/lampiran/$kode'
+    | '/guru/jadwal/$id'
     | '/guru/pengaduan/$kode'
     | '/siswa/jadwal/ajukan'
     | '/siswa/pengaduan/$kode'
@@ -353,6 +373,7 @@ export interface FileRouteTypes {
     | '/admin/pengaturan'
     | '/api/cron'
     | '/api/health'
+    | '/api/laporan.pdf'
     | '/guru/laporan'
     | '/guru/slot'
     | '/admin'
@@ -360,6 +381,7 @@ export interface FileRouteTypes {
     | '/siswa'
     | '/admin/siswa/import'
     | '/api/lampiran/$kode'
+    | '/guru/jadwal/$id'
     | '/guru/pengaduan/$kode'
     | '/siswa/jadwal/ajukan'
     | '/siswa/pengaduan/$kode'
@@ -387,6 +409,7 @@ export interface FileRouteTypes {
     | '/admin/pengaturan'
     | '/api/cron'
     | '/api/health'
+    | '/api/laporan.pdf'
     | '/guru/laporan'
     | '/guru/slot'
     | '/admin/'
@@ -394,6 +417,7 @@ export interface FileRouteTypes {
     | '/siswa/'
     | '/admin/siswa/import'
     | '/api/lampiran/$kode'
+    | '/guru/jadwal/$id'
     | '/guru/pengaduan/$kode'
     | '/siswa/jadwal/ajukan'
     | '/siswa/pengaduan/$kode'
@@ -416,6 +440,7 @@ export interface RootRouteChildren {
   ProfilRoute: typeof ProfilRoute
   ApiCronRoute: typeof ApiCronRoute
   ApiHealthRoute: typeof ApiHealthRoute
+  ApiLaporanDotpdfRoute: typeof ApiLaporanDotpdfRoute
   ApiLampiranKodeRoute: typeof ApiLampiranKodeRoute
 }
 
@@ -540,6 +565,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiHealthRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/laporan.pdf': {
+      id: '/api/laporan.pdf'
+      path: '/api/laporan.pdf'
+      fullPath: '/api/laporan.pdf'
+      preLoaderRoute: typeof ApiLaporanDotpdfRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/guru/': {
       id: '/guru/'
       path: '/'
@@ -594,6 +626,13 @@ declare module '@tanstack/react-router' {
       path: '/jadwal'
       fullPath: '/guru/jadwal/'
       preLoaderRoute: typeof GuruJadwalIndexRouteImport
+      parentRoute: typeof GuruRouteRoute
+    }
+    '/guru/jadwal/$id': {
+      id: '/guru/jadwal/$id'
+      path: '/jadwal/$id'
+      fullPath: '/guru/jadwal/$id'
+      preLoaderRoute: typeof GuruJadwalIdRouteImport
       parentRoute: typeof GuruRouteRoute
     }
     '/guru/pengaduan/': {
@@ -680,6 +719,7 @@ interface GuruRouteRouteChildren {
   GuruLaporanRoute: typeof GuruLaporanRoute
   GuruSlotRoute: typeof GuruSlotRoute
   GuruIndexRoute: typeof GuruIndexRoute
+  GuruJadwalIdRoute: typeof GuruJadwalIdRoute
   GuruPengaduanKodeRoute: typeof GuruPengaduanKodeRoute
   GuruJadwalIndexRoute: typeof GuruJadwalIndexRoute
   GuruPengaduanIndexRoute: typeof GuruPengaduanIndexRoute
@@ -689,6 +729,7 @@ const GuruRouteRouteChildren: GuruRouteRouteChildren = {
   GuruLaporanRoute: GuruLaporanRoute,
   GuruSlotRoute: GuruSlotRoute,
   GuruIndexRoute: GuruIndexRoute,
+  GuruJadwalIdRoute: GuruJadwalIdRoute,
   GuruPengaduanKodeRoute: GuruPengaduanKodeRoute,
   GuruJadwalIndexRoute: GuruJadwalIndexRoute,
   GuruPengaduanIndexRoute: GuruPengaduanIndexRoute,
@@ -731,6 +772,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProfilRoute: ProfilRoute,
   ApiCronRoute: ApiCronRoute,
   ApiHealthRoute: ApiHealthRoute,
+  ApiLaporanDotpdfRoute: ApiLaporanDotpdfRoute,
   ApiLampiranKodeRoute: ApiLampiranKodeRoute,
 }
 export const routeTree = rootRouteImport

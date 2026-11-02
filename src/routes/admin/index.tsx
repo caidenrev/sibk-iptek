@@ -13,8 +13,6 @@ export const Route = createFileRoute("/admin/")({
   component: DashboardAdmin,
 })
 
-// Kesehatan notifikasi masih contoh — diisi dari tabel notifikasi di Sprint 3.
-const NOTIF = { terkirim: 184, gagal: 3 }
 
 function DashboardAdmin() {
   const r = Route.useLoaderData()
@@ -23,8 +21,9 @@ function DashboardAdmin() {
     { label: "Kelas", nilai: r.kelas, icon: School, to: "/admin/kelas" as const },
     { label: "Guru BK aktif", nilai: r.guru, icon: Users, to: "/admin/guru" as const },
   ]
+  const NOTIF = r.notifikasi
   const total = NOTIF.terkirim + NOTIF.gagal
-  const persen = Math.round((NOTIF.terkirim / total) * 100)
+  const persen = total ? Math.round((NOTIF.terkirim / total) * 100) : 0
   return (
     <div className="mx-auto max-w-6xl">
       <PageHeader title="Dashboard" description="Ringkasan sistem" />
@@ -56,7 +55,7 @@ function DashboardAdmin() {
           <CardTitle className="flex items-center gap-2">
             <BellRing className="size-4" aria-hidden /> Kesehatan notifikasi
           </CardTitle>
-          <CardDescription>Contoh tampilan · aktif setelah Sprint 3</CardDescription>
+          <CardDescription>30 hari terakhir, tanpa pesan uji</CardDescription>
           <CardAction>
             <Button asChild variant="ghost" size="sm">
               <Link to="/admin/notifikasi">Buka log</Link>
@@ -64,6 +63,7 @@ function DashboardAdmin() {
           </CardAction>
         </CardHeader>
         <CardContent className="grid gap-3">
+          {total === 0 && <p className="text-sm text-muted-foreground">Belum ada notifikasi dalam 30 hari terakhir.</p>}
           <div className="flex items-baseline justify-between text-sm">
             <span className="text-muted-foreground">Berhasil terkirim</span>
             <span className="tabular font-semibold">{persen}%</span>
@@ -75,6 +75,13 @@ function DashboardAdmin() {
             <span className="text-muted-foreground">·</span>
             <StatusBadge status="gagal" />
             <span className="tabular">{NOTIF.gagal}</span>
+            {NOTIF.dilewati > 0 && (
+              <>
+                <span className="text-muted-foreground">·</span>
+                <StatusBadge status="dilewati" />
+                <span className="tabular">{NOTIF.dilewati}</span>
+              </>
+            )}
           </div>
         </CardContent>
       </Card>

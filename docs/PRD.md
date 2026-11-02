@@ -174,7 +174,8 @@ Pengaturan (admin):
 - SMTP: host, port, user, password (App Password), nama & alamat pengirim, toggle aktif.
 - Tombol "Uji koneksi" untuk masing-masing.
 - Secret disimpan **terenkripsi** (AES-256-GCM) di tabel `pengaturan` dan tidak pernah dikirim balik ke browser (ditampilkan `••••`).
-- Halaman **Log notifikasi**: filter kanal/jenis/status, kirim ulang. **[REVISI]** Untuk notifikasi terkait aduan anonim, admin hanya melihat jenis & status, sedangkan penerima disamarkan. Tanpa ini, admin bisa mencocokkan waktu tanggapan dengan nama penerima lalu mengetahui pengirim aduan anonim.
+- **[REVISI, Sprint 3]** Aturan pengiriman saat implementasi: hanya ke kontak yang sudah diverifikasi pemiliknya; notifikasi balasan untuk satu aduan dibatasi sekali per 30 menit per penerima agar HP tidak dibanjiri; balasan siswa hanya diberitahukan ke Guru BK penanggung jawab; percobaan ulang 1 menit lalu 5 menit; kanal yang belum dikonfigurasi di produksi dicatat `dilewati` (tidak dicoba ulang); saat pengembangan, notifikasi otomatis hanya dicetak ke log kecuali `NOTIF_KIRIM_NYATA=true`. Pemicu cron memakai cron-job.org (Vercel gratis hanya sekali sehari).
+- Halaman **Log notifikasi**: filter kanal/jenis/status, kirim ulang. **[REVISI]** Untuk notifikasi terkait aduan anonim, admin hanya melihat jenis & status, sedangkan penerima disamarkan. **[REVISI, Sprint 3]** Isi pesan tidak ditampilkan di log sama sekali (untuk semua notifikasi), dan penerima disamarkan sejak dari server, bukan sekadar disembunyikan di tampilan. Tanpa ini, admin bisa mencocokkan waktu tanggapan dengan nama penerima lalu mengetahui pengirim aduan anonim.
 
 ### 5.9 Catatan & riwayat konseling (KF-11) — Sprint 4
 - Guru BK mengisi catatan pada jadwal `selesai`: ringkasan masalah, tindak lanjut, **[REVISI]** opsional "perlu sesi lanjutan" (shortcut ke pembuatan slot).
@@ -239,7 +240,7 @@ Ancaman dan mitigasinya:
 
 **catatan_konseling**: id, jadwal_id (unik), ➕`guru_bk_id`, ringkasan_masalah, tindak_lanjut, ➕`tampilkan_ke_siswa`, created_at, ➕`updated_at`
 
-**notifikasi** (✏️ dari `notifikasi_log`): id, user_id, kanal (`whatsapp|email`), jenis, ➕`ref_tipe` (`pengaduan|jadwal|tes`), ➕`ref_id`, ➕`is_sensitif` (terkait aduan anonim), pesan, ✏️status (`menunggu|terkirim|gagal|dilewati`), ➕`percobaan`, ➕`error_terakhir`, ➕`dijadwalkan_pada`, dikirim_pada, created_at · ➕ unik `(user_id, kanal, jenis, ref_tipe, ref_id)`
+**notifikasi** (✏️ dari `notifikasi_log`): id, user_id, kanal (`whatsapp|email`), jenis, ➕`ref_tipe` (`pengaduan|jadwal|tes`), ➕`ref_id`, ➕`is_sensitif` (terkait aduan anonim), pesan, ✏️status (`menunggu|terkirim|gagal|dilewati`), ➕`percobaan`, ➕`error_terakhir`, ➕`dijadwalkan_pada`, dikirim_pada, created_at · **[REVISI, Sprint 3]** ➕`tujuan` (alamat saat pesan dibuat), ➕`subjek`, ➕`html`, ➕`kunci`, ➕`diklaim_pada` · unik `(user_id, kanal, kunci)` menggantikan `(user_id, kanal, jenis, ref_tipe, ref_id)`, karena satu aduan bisa punya banyak tanggapan (kunci tanggapan = `tanggapan:<id>`, kunci pengingat = `pengingat_h1:<jadwal_id>`)
 
 ➕ **kode_otp**: id, user_id, keperluan (`verifikasi_email|verifikasi_wa|reset_password`), kanal (`email|whatsapp`), tujuan, kode_hash (HMAC), percobaan, kedaluwarsa_pada, dipakai_pada, created_at
 

@@ -26,7 +26,7 @@ export const kirimKodeVerifikasiFn = createServerFn({ method: "POST" })
     }
     if (!u.noWhatsapp) throw new PesanError("Isi nomor WhatsApp di profil terlebih dahulu.")
     if (u.waTerverifikasi) throw new PesanError("Nomor ini sudah terverifikasi.")
-    if (!waAktif()) throw new PesanError("Pengiriman WhatsApp belum diaktifkan sekolah.")
+    if (!(await waAktif())) throw new PesanError("Pengiriman WhatsApp belum diaktifkan sekolah.")
     return kirimOtp({ userId: u.id, nama: u.nama, keperluan: "verifikasi_wa", kanal: "whatsapp", tujuan: u.noWhatsapp })
   })
 

@@ -1,6 +1,6 @@
-import { Link, createFileRoute, notFound, useRouter } from "@tanstack/react-router"
-import { ArrowLeft, SearchX } from "lucide-react"
-import { useEffect } from "react"
+import { Link, createFileRoute, notFound, useNavigate, useRouter } from "@tanstack/react-router"
+import { ArrowLeft, SearchX, UserRoundCheck } from "lucide-react"
+import { useEffect, useState } from "react"
 import { toast } from "sonner"
 import { FormBalas, Lampiran, Percakapan } from "@/components/app/percakapan"
 import { AnonBadge, KodeTiket, StatusBadge, UrgensiBadge } from "@/components/app/status-badge"
@@ -9,7 +9,18 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty"
 import { formatTanggal } from "@/lib/format"
 import { pesanError } from "@/lib/pesan-error"
-import { balasSiswaFn, detailSiswaFn } from "@/server/functions/pengaduan"
+import { balasSiswaFn, bukaIdentitasFn, detailSiswaFn } from "@/server/functions/pengaduan"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { Spinner } from "@/components/ui/spinner"
 
 export const Route = createFileRoute("/siswa/pengaduan/$kode")({
   loader: async ({ params }) => {
@@ -61,6 +72,11 @@ function Detail() {
             Guru BK melihatmu sebagai <strong className="font-semibold">{d.alias}</strong>. Namamu tidak ditampilkan.
           </p>
         )}
+        {d.isAnonim && d.identitasDibuka && (
+          <p className="mt-3 rounded-xl bg-muted px-4 py-3 text-sm">
+            Kamu sudah membuka identitas untuk aduan ini. Guru BK melihat nama, NIS, dan kelasmu. Aduan anonimmu yang lain tetap tersamar.
+          </p>
+        )}
       </header>
 
       <Card>
@@ -79,6 +95,8 @@ function Detail() {
           )}
         </CardContent>
       </Card>
+
+      {d.isAnonim && !d.identitasDibuka && d.status !== "selesai" && <KartuBukaIdentitas kode={d.kodeTiket} />}
 
       {(!d.isAnonim || d.identitasDibuka) && d.status !== "selesai" && (
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-card px-4 py-3">
@@ -116,6 +134,55 @@ function Detail() {
           />
         )}
       </div>
+    </div>
+  )
+}
+
+function KartuBukaIdentitas({ kode }: { kode: string }) {
+  const navigate = useNavigate()
+  const [buka, setBuka] = useState(false)
+  const [jalan, setJalan] = useState(false)
+  return (
+    <div className="mt-4 grid gap-3 rounded-xl border bg-card px-4 py-4 sm:flex sm:items-center sm:justify-between">
+      <div>
+        <p className="font-medium">Ingin bertemu Guru BK langsung?</p>
+        <p className="text-sm text-muted-foreground">Untuk konseling tatap muka, Guru BK perlu tahu siapa kamu.</p>
+      </div>
+      <Button variant="outline" className="h-11 shrink-0 md:h-9" onClick={() => setBuka(true)}>
+        <UserRoundCheck data-icon="inline-start" /> Buka identitas & ajukan konseling
+      </Button>
+      <AlertDialog open={buka} onOpenChange={(o) => !jalan && setBuka(o)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Buka identitas untuk aduan ini?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Nama, NIS, dan kelasmu akan terlihat oleh Guru BK untuk aduan <span className="font-mono font-semibold">{kode}</span>.
+              Ini tidak bisa dibatalkan. Aduan anonimmu yang lain tetap tersamar.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={jalan}>Tetap anonim</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={jalan}
+              onClick={async (e) => {
+                e.preventDefault()
+                setJalan(true)
+                try {
+                  await bukaIdentitasFn({ data: { kode } })
+                  toast.success("Identitas dibuka. Sekarang pilih waktu bertemu.")
+                  await navigate({ to: "/siswa/jadwal/ajukan", search: { kode } })
+                } catch (err) {
+                  toast.error(pesanError(err))
+                  setJalan(false)
+                }
+              }}
+            >
+              {jalan && <Spinner data-icon="inline-start" />}
+              Buka identitas
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

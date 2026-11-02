@@ -14,6 +14,7 @@ import {
   queryPengaduanGuru,
 } from "../services/pengaduan"
 import { PesanError, authMw, guruMw, siswaMw } from "./middleware"
+import { picuNotifikasi } from "../services/notifikasi"
 import { balasanSchema, kodeTiketSchema, pengaduanSchema } from "@/lib/validasi"
 
 const PER_HALAMAN = 20
@@ -62,7 +63,9 @@ export const kirimPengaduanFn = createServerFn({ method: "POST" })
   })
   .handler(async ({ data, context }) => {
     if (!context.user.siswaId) throw new PesanError("Akun ini bukan akun siswa.")
-    return buatPengaduan(context.user.siswaId, data.data, data.lampiran)
+    const r = await buatPengaduan(context.user.siswaId, data.data, data.lampiran)
+    await picuNotifikasi({ jenis: "pengaduan_baru", pengaduanId: r.id })
+    return { kodeTiket: r.kodeTiket }
   })
 
 export const riwayatSiswaFn = createServerFn({ method: "GET" })
@@ -133,11 +136,34 @@ export const balasSiswaFn = createServerFn({ method: "POST" })
     if (!p) throw new PesanError("Pengaduan tidak ditemukan.")
     if (p.status === "selesai") throw new PesanError("Pengaduan ini sudah selesai. Kirim pengaduan baru bila masih perlu bantuan.")
     // Pesan siswa tidak menyimpan user_id, supaya aduan anonim tidak bisa ditelusuri lewat tanggapan.
-    await db.insert(tanggapan).values({ pengaduanId: p.id, pengirim: "siswa", userId: null, isi: data.isi })
+    const [t] = await db.insert(tanggapan).values({ pengaduanId: p.id, pengirim: "siswa", userId: null, isi: data.isi }).returning({ id: tanggapan.id })
     await db
       .update(pengaduan)
       .set({ dibacaSiswaPada: sql`now()`, updatedAt: sql`now()` })
       .where(eq(pengaduan.id, p.id))
+    await picuNotifikasi({ jenis: "tanggapan", pengaduanId: p.id, tanggapanId: t.id, dari: "siswa" })
+    return { ok: true }
+  })
+
+/**
+ * Buka identitas aduan anonim (PRD §5.6, BB-23). Hanya untuk aduan ini: siswa_id diisi sehingga
+ * Guru BK melihat nama, NIS, kelas. Tidak bisa dibatalkan. `is_anonim` tidak diubah agar statistik
+ * tetap menghitung aduan ini sebagai anonim.
+ */
+export const bukaIdentitasFn = createServerFn({ method: "POST" })
+  .middleware([siswaMw])
+  .validator(z.object({ kode: kodeTiketSchema }))
+  .handler(async ({ data, context }) => {
+    const me = context.user.siswaId
+    if (!me) throw new PesanError("Akun ini bukan akun siswa.")
+    const p = await pengaduanMilikSiswa(data.kode, me)
+    if (!p) throw new PesanError("Pengaduan tidak ditemukan.")
+    if (!p.isAnonim || p.identitasDibukaPada) return { ok: true }
+    await db
+      .update(pengaduan)
+      .set({ siswaId: me, identitasDibukaPada: sql`now()`, updatedAt: sql`now()` })
+      // Syarat diulang di WHERE supaya dua klik bersamaan tidak menulis dua kali.
+      .where(and(eq(pengaduan.id, p.id), isNull(pengaduan.identitasDibukaPada)))
     return { ok: true }
   })
 
@@ -248,7 +274,7 @@ export const tanggapiGuruFn = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const saya = context.user.guruBkId
     if (!saya) throw new PesanError("Akun Guru BK tidak lengkap.")
-    await db.transaction(async (tx) => {
+    const baru = await db.transaction(async (tx) => {
       const [p] = await tx
         .select({ id: pengaduan.id, guruBkId: pengaduan.guruBkId, status: pengaduan.status })
         .from(pengaduan)
@@ -259,7 +285,10 @@ export const tanggapiGuruFn = createServerFn({ method: "POST" })
         throw new PesanError("Pengaduan ini ditangani Guru BK lain. Kamu hanya bisa membacanya.")
       }
       if (p.status === "selesai") throw new PesanError("Pengaduan sudah selesai. Ubah status ke Diproses untuk membalas lagi.")
-      await tx.insert(tanggapan).values({ pengaduanId: p.id, pengirim: "guru_bk", userId: context.user.id, isi: data.isi })
+      const [t] = await tx
+        .insert(tanggapan)
+        .values({ pengaduanId: p.id, pengirim: "guru_bk", userId: context.user.id, isi: data.isi })
+        .returning({ id: tanggapan.id })
       await tx
         .update(pengaduan)
         .set({
@@ -269,7 +298,9 @@ export const tanggapiGuruFn = createServerFn({ method: "POST" })
           updatedAt: sql`now()`,
         })
         .where(eq(pengaduan.id, p.id))
+      return { pengaduanId: p.id, tanggapanId: t.id }
     })
+    await picuNotifikasi({ jenis: "tanggapan", ...baru, dari: "guru_bk" })
     return { ok: true }
   })
 

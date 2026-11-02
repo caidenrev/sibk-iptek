@@ -3,17 +3,19 @@ import nodemailer from "nodemailer"
 import type { Transporter } from "nodemailer"
 import { env } from "../env"
 import { LOGO_EMAIL_CID, LOGO_EMAIL_PNG_BASE64 } from "./logo-email"
+import { tokenFonnte } from "../services/pengaturan"
 
 // Pengirim pesan tingkat rendah: email (SMTP — Resend/Gmail) dan WhatsApp (Fonnte).
-// Sprint 3 menambahkan antrean (outbox), percobaan ulang, dan log notifikasi di atas fungsi ini.
+// Antrean (outbox), percobaan ulang, dan log notifikasi ada di services/notifikasi.ts.
 
-export type HasilKirim = { ok: true; mode: "kirim" | "log" } | { ok: false; error: string }
+/** `belumDiatur`: kanal belum dikonfigurasi di produksi, jadi pesan dilewati (bukan dicoba ulang). */
+export type HasilKirim = { ok: true; mode: "kirim" | "log" } | { ok: false; error: string; belumDiatur?: boolean }
 
 let transporter: Transporter | null = null
 
 export const emailAktif = () => !!(env.SMTP_HOST && env.SMTP_USER && env.SMTP_PASS)
-/** WA tersedia bila token Fonnte diisi; di mode pengembangan selalu tersedia (pesan dicetak ke log). */
-export const waAktif = () => !!env.FONNTE_TOKEN || env.NODE_ENV !== "production"
+/** WA tersedia bila token Fonnte diisi (admin atau env); di mode pengembangan selalu tersedia (pesan dicetak ke log). */
+export const waAktif = async () => !!(await tokenFonnte()).nilai || env.NODE_ENV !== "production"
 
 function getTransporter() {
   transporter ??= nodemailer.createTransport({
@@ -27,7 +29,7 @@ function getTransporter() {
 
 export async function kirimEmail(p: { ke: string; subjek: string; teks: string; html: string }): Promise<HasilKirim> {
   if (!emailAktif()) {
-    if (env.NODE_ENV === "production") return { ok: false, error: "Email belum dikonfigurasi." }
+    if (env.NODE_ENV === "production") return { ok: false, error: "Email belum dikonfigurasi.", belumDiatur: true }
     console.info(`\n[email:log] ke=${p.ke} subjek="${p.subjek}"\n${p.teks}\n`)
     return { ok: true, mode: "log" }
   }
@@ -52,8 +54,9 @@ export async function kirimEmail(p: { ke: string; subjek: string; teks: string; 
 }
 
 export async function kirimWhatsapp(p: { ke: string; pesan: string }): Promise<HasilKirim> {
-  if (!env.FONNTE_TOKEN) {
-    if (env.NODE_ENV === "production") return { ok: false, error: "WhatsApp belum dikonfigurasi." }
+  const { nilai: token } = await tokenFonnte()
+  if (!token) {
+    if (env.NODE_ENV === "production") return { ok: false, error: "WhatsApp belum dikonfigurasi.", belumDiatur: true }
     console.info(`\n[whatsapp:log] ke=${p.ke}\n${p.pesan}\n`)
     return { ok: true, mode: "log" }
   }
@@ -61,7 +64,7 @@ export async function kirimWhatsapp(p: { ke: string; pesan: string }): Promise<H
     // https://docs.fonnte.com — POST /send, header Authorization: <token>
     const res = await fetch("https://api.fonnte.com/send", {
       method: "POST",
-      headers: { Authorization: env.FONNTE_TOKEN },
+      headers: { Authorization: token },
       body: new URLSearchParams({ target: p.ke, message: p.pesan, countryCode: "62" }),
     })
     const body = (await res.json().catch(() => ({}))) as { status?: boolean; reason?: string; detail?: string }

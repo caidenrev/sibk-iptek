@@ -73,3 +73,24 @@ export function waOtp(p: { kode: string; keperluan: KeperluanOtp; menit: number 
   const k = KEPERLUAN[p.keperluan]
   return `*${p.kode}* adalah ${k.judul.toLowerCase()} SIBK SMK IPTEK.\n\nBerlaku ${p.menit} menit. Jangan berikan kode ini kepada siapa pun, termasuk Guru BK atau admin.`
 }
+
+// ---------------------------------------------------------------- notifikasi Sprint 3
+
+/**
+ * Pesan notifikasi umum. Untuk aduan anonim, pemanggil wajib memakai kalimat yang tidak
+ * menyebut isi aduan (PRD §5.8): HP siswa bisa dilihat orang lain.
+ */
+export function pesanNotifikasi(p: { nama: string; judul: string; baris: Array<string>; tautan: string; labelTautan: string }) {
+  const sapaan = p.nama.split(" ")[0]
+  const url = `${env.APP_URL.replace(/\/$/, "")}${p.tautan}`
+  const teks = [`Halo ${sapaan},`, ``, ...p.baris, ``, `${p.labelTautan}: ${url}`, ``, `SIBK SMK IPTEK Tangerang Selatan`].join("\n")
+  const html = kerangka(
+    p.judul,
+    `<h1 style="margin:0 0 8px;font-size:20px">${esc(p.judul)}</h1>
+<p style="margin:0 0 12px">Halo ${esc(sapaan)},</p>
+${p.baris.map((b) => `<p style="margin:0 0 12px">${esc(b)}</p>`).join("\n")}
+<p style="margin:20px 0 0"><a href="${esc(url)}" style="display:inline-block;padding:12px 20px;background:${WARNA.utama};color:#ffffff;text-decoration:none;border-radius:10px;font-weight:600">${esc(p.labelTautan)}</a></p>`
+  )
+  const wa = [`*${p.judul}*`, ``, ...p.baris, ``, url].join("\n")
+  return { subjek: `${p.judul} · SIBK`, teks, html, wa }
+}

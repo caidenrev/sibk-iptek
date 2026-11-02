@@ -19,6 +19,8 @@ import { pesanError } from "@/lib/pesan-error"
 import { profilSchema } from "@/lib/validasi"
 import { updateProfilFn } from "@/server/functions/auth"
 import { IkonEmail, IkonWhatsApp } from "@/components/app/ikon-kontak"
+import { tesNotifikasiSayaFn } from "@/server/functions/notifikasi"
+import { Send } from "lucide-react"
 
 export const Route = createFileRoute("/profil")({
   beforeLoad: ({ context, location }) => wajibLogin(context, location),
@@ -125,11 +127,12 @@ function Profil() {
                   <p className="text-sm text-muted-foreground">
                     Kontak yang terverifikasi juga bisa dipakai untuk mereset password kalau kamu lupa.
                   </p>
-                  <div>
+                  <div className="flex flex-wrap gap-2">
                     <Button type="submit" disabled={form.formState.isSubmitting || !form.formState.isDirty}>
                       {form.formState.isSubmitting && <Spinner data-icon="inline-start" />}
                       Simpan kontak
                     </Button>
+                    {(user.emailTerverifikasi || user.waTerverifikasi) && !form.formState.isDirty && <TombolTesNotifikasi />}
                   </div>
                 </FieldGroup>
               </form>
@@ -157,5 +160,36 @@ function Profil() {
         </div>
       </div>
     </AppShell>
+  )
+}
+
+
+/** Kirim pesan uji ke kontak terverifikasi milik sendiri (tugas 3.11). */
+function TombolTesNotifikasi() {
+  const [jalan, setJalan] = useState(false)
+  return (
+    <Button
+      type="button"
+      variant="outline"
+      disabled={jalan}
+      onClick={async () => {
+        setJalan(true)
+        try {
+          const hasil = await tesNotifikasiSayaFn()
+          const nama = (k: string) => (k === "email" ? "Email" : "WhatsApp")
+          const ok = hasil.filter((h) => h.status === "terkirim")
+          const tidak = hasil.filter((h) => h.status !== "terkirim")
+          if (ok.length) toast.success(`${ok.map((h) => nama(h.kanal)).join(" dan ")} uji terkirim. Periksa pesannya.`)
+          for (const h of tidak) toast.error(`${nama(h.kanal)} belum terkirim: ${h.error ?? h.status}`)
+        } catch (e) {
+          toast.error(pesanError(e))
+        } finally {
+          setJalan(false)
+        }
+      }}
+    >
+      {jalan ? <Spinner data-icon="inline-start" /> : <Send data-icon="inline-start" />}
+      Kirim tes notifikasi
+    </Button>
   )
 }

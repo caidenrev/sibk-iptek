@@ -164,3 +164,38 @@ export const pesanSchema = z
   .max(3000, "Pesan maksimal 3.000 karakter")
 
 export const balasanSchema = z.object({ kode: kodeTiketSchema, isi: pesanSchema })
+
+// ---------------------------------------------------------------- Sprint 3: jadwal konseling
+
+export const tanggalSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Tanggal tidak valid")
+export const jamSchema = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Jam tidak valid")
+const menit = (j: string) => Number(j.slice(0, 2)) * 60 + Number(j.slice(3, 5))
+
+export const slotSchema = z
+  .object({
+    tanggal: tanggalSchema,
+    jamMulai: jamSchema,
+    jamSelesai: jamSchema,
+    lokasi: z.string().trim().min(2, "Lokasi wajib diisi").max(100),
+    /** 0 = tidak berulang. Lainnya: ulangi di hari-hari terpilih selama N minggu. */
+    ulangiMinggu: z.number().int().min(0).max(12).default(0),
+    /** 1 = Senin … 6 = Sabtu (ISO). Dipakai bila ulangiMinggu > 0. */
+    hari: z.array(z.number().int().min(1).max(7)).max(7).default([]),
+  })
+  .refine((v) => menit(v.jamSelesai) > menit(v.jamMulai), { path: ["jamSelesai"], message: "Jam selesai harus setelah jam mulai" })
+  .refine((v) => menit(v.jamSelesai) - menit(v.jamMulai) >= 15, { path: ["jamSelesai"], message: "Sesi minimal 15 menit" })
+  .refine((v) => menit(v.jamSelesai) - menit(v.jamMulai) <= 180, { path: ["jamSelesai"], message: "Sesi maksimal 3 jam" })
+  .refine((v) => v.ulangiMinggu === 0 || v.hari.length > 0, { path: ["hari"], message: "Pilih minimal satu hari" })
+export type SlotInput = z.input<typeof slotSchema>
+
+export const ajukanJadwalSchema = z.object({
+  slotId: idSchema,
+  topik: z.string().trim().min(5, "Topik minimal 5 karakter").max(200, "Topik maksimal 200 karakter"),
+  kodePengaduan: z.string().trim().toUpperCase().optional(),
+})
+export type AjukanJadwalInput = z.input<typeof ajukanJadwalSchema>
+
+export const tolakJadwalSchema = z.object({
+  id: idSchema,
+  alasan: z.string().trim().min(5, "Tulis alasan minimal 5 karakter").max(500),
+})

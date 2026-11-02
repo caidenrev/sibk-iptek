@@ -249,7 +249,7 @@ function ItemMenu({ item, aktif, tabAktif, jumlah }: { item: NavItem; aktif: boo
           )}
         </span>
         <span className="truncate group-data-[collapsible=icon]:hidden">{item.title}</span>
-        {jumlah > 0 && <span className="sr-only">, {jumlah} belum dibaca</span>}
+        {jumlah > 0 && <span className="sr-only">, {jumlah} perlu dilihat</span>}
       </Link>
     </SidebarMenuButton>
   )

@@ -5,18 +5,21 @@
 // Tabel ditambahkan bertahap per sprint:
 //   Sprint 1: users, sesi, guru_bk, kelas, siswa, kategori_masalah, kode_otp   ← file ini
 //   Sprint 2: pengaduan, tanggapan   ← sudah ditambahkan
-//   Sprint 3: slot_jadwal, jadwal_konseling, notifikasi, pengaturan
+//   Sprint 3: slot_jadwal, jadwal_konseling   ← sudah ditambahkan; notifikasi, pengaturan menyusul
 //   Sprint 4: catatan_konseling
 import { relations, sql } from "drizzle-orm"
 import {
   bigint,
   boolean,
   char,
+  check,
+  date,
   index,
   pgEnum,
   pgTable,
   smallint,
   text,
+  time,
   timestamp,
   uniqueIndex,
   varchar,
@@ -217,6 +220,69 @@ export const tanggapan = pgTable(
     createdAt: createdAt(),
   },
   (t) => [index("tanggapan_pengaduan_idx").on(t.pengaduanId, t.createdAt)]
+).enableRLS()
+
+// ---------------------------------------------------------------- Sprint 3: jadwal konseling
+
+export const STATUS_SLOT = ["tersedia", "dipesan", "ditutup"] as const
+export const statusSlotEnum = pgEnum("status_slot", STATUS_SLOT)
+export const STATUS_JADWAL = ["menunggu", "disetujui", "ditolak", "selesai", "batal", "tidak_hadir"] as const
+export type StatusJadwal = (typeof STATUS_JADWAL)[number]
+export const statusJadwalEnum = pgEnum("status_jadwal", STATUS_JADWAL)
+
+/**
+ * Tabel 3.12 (+ revisi PRD §5.7). Tanggal & jam disimpan sebagai waktu lokal WIB (sekolah hanya
+ * di satu zona waktu). Larangan tumpang tindih dijaga constraint EXCLUDE di migrasi 0003, bukan di
+ * sini, karena Drizzle belum bisa menuliskannya.
+ */
+export const slotJadwal = pgTable(
+  "slot_jadwal",
+  {
+    id: id(),
+    guruBkId: fk("guru_bk_id")
+      .notNull()
+      .references(() => guruBk.id, { onDelete: "cascade" }),
+    tanggal: date("tanggal", { mode: "string" }).notNull(),
+    jamMulai: time("jam_mulai").notNull(),
+    jamSelesai: time("jam_selesai").notNull(),
+    lokasi: varchar("lokasi", { length: 100 }).notNull(),
+    status: statusSlotEnum("status").notNull().default("tersedia"),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    index("slot_guru_tanggal_idx").on(t.guruBkId, t.tanggal),
+    check("slot_jam_valid", sql`${t.jamSelesai} > ${t.jamMulai}`),
+  ]
+).enableRLS()
+
+/** Tabel 3.13 (+ diputuskan_pada, updated_at). Satu slot hanya boleh punya satu pengajuan aktif. */
+export const jadwalKonseling = pgTable(
+  "jadwal_konseling",
+  {
+    id: id(),
+    siswaId: fk("siswa_id")
+      .notNull()
+      .references(() => siswa.id, { onDelete: "cascade" }),
+    slotId: fk("slot_id")
+      .notNull()
+      .references(() => slotJadwal.id, { onDelete: "restrict" }),
+    /** Hanya aduan beridentitas atau yang identitasnya sudah dibuka siswa (PRD §5.6) */
+    pengaduanId: fk("pengaduan_id").references(() => pengaduan.id, { onDelete: "set null" }),
+    topik: varchar("topik", { length: 200 }).notNull(),
+    status: statusJadwalEnum("status").notNull().default("menunggu"),
+    alasanPenolakan: text("alasan_penolakan"),
+    diputuskanPada: waktu("diputuskan_pada"),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    // Pengaman terakhir anti double-booking (BB-18), di samping row lock saat memesan.
+    uniqueIndex("jadwal_satu_aktif_per_slot")
+      .on(t.slotId)
+      .where(sql`${t.status} in ('menunggu', 'disetujui')`),
+    index("jadwal_siswa_idx").on(t.siswaId, t.status),
+  ]
 ).enableRLS()
 
 // ---------------------------------------------------------------- relasi

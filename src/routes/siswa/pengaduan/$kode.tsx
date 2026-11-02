@@ -80,6 +80,17 @@ function Detail() {
         </CardContent>
       </Card>
 
+      {(!d.isAnonim || d.identitasDibuka) && d.status !== "selesai" && (
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-card px-4 py-3">
+          <p className="text-sm">Ingin membahasnya langsung dengan Guru BK?</p>
+          <Button asChild variant="outline" className="h-11 md:h-9">
+            <Link to="/siswa/jadwal/ajukan" search={{ kode: d.kodeTiket }}>
+              Ajukan konseling
+            </Link>
+          </Button>
+        </div>
+      )}
+
       <div className="mt-4">
         {d.status === "selesai" ? (
           <p className="rounded-xl border bg-card px-4 py-3 text-sm text-muted-foreground">

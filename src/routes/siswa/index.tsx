@@ -1,21 +1,26 @@
 import { Link, createFileRoute } from "@tanstack/react-router"
-import { CalendarClock, CalendarPlus, ChevronRight, MessageSquareHeart } from "lucide-react"
+import { CalendarPlus, ChevronRight, MapPin, MessageSquareHeart } from "lucide-react"
 
 import { AnonBadge, KodeTiket, StatusBadge } from "@/components/app/status-badge"
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { formatTanggalPendek } from "@/lib/format"
+import { formatSlot, formatTanggalPendek } from "@/lib/format"
 import { riwayatSiswaFn } from "@/server/functions/pengaduan"
+import { jadwalBerikutnyaFn } from "@/server/functions/jadwal"
 
 export const Route = createFileRoute("/siswa/")({
   head: () => ({ meta: [{ title: "Beranda · SIBK" }] }),
-  loader: () => riwayatSiswaFn(),
+  loader: async () => {
+    const [aduan, jadwal] = await Promise.all([riwayatSiswaFn(), jadwalBerikutnyaFn()])
+    return { aduan, jadwal }
+  },
   component: DashboardSiswa,
 })
 
 function DashboardSiswa() {
   const { user } = Route.useRouteContext()
-  const aktif = Route.useLoaderData().filter((p) => p.status !== "selesai")
+  const { aduan, jadwal } = Route.useLoaderData()
+  const aktif = aduan.filter((p) => p.status !== "selesai")
   const nama = user.nama.split(" ")[0]
   return (
     <div className="mx-auto max-w-3xl">
@@ -42,12 +47,37 @@ function DashboardSiswa() {
 
       <Card className="mt-6">
         <CardHeader>
-          <CardTitle>Jadwal konseling</CardTitle>
-          <CardDescription>Pengajuan jadwal tatap muka dan pengingat otomatis sedang dibangun (Sprint 3).</CardDescription>
+          <CardTitle>Jadwal berikutnya</CardTitle>
           <CardAction>
-            <CalendarClock className="size-5 text-muted-foreground" aria-hidden />
+            <Button asChild variant="ghost" size="sm" className="h-11 md:h-8">
+              <Link to="/siswa/jadwal">Semua jadwal</Link>
+            </Button>
           </CardAction>
         </CardHeader>
+        <CardContent>
+          {jadwal ? (
+            <Link
+              to="/siswa/jadwal"
+              className="grid gap-1 rounded-xl border p-3 outline-none transition-colors hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <span className="flex flex-wrap items-center justify-between gap-2">
+                <span className="tabular font-semibold">{formatSlot(jadwal.slot.tanggal, jadwal.slot.jamMulai, jadwal.slot.jamSelesai)}</span>
+                <StatusBadge status={jadwal.status} />
+              </span>
+              <span className="text-sm text-muted-foreground">
+                {jadwal.guruNama} · <MapPin className="inline size-3.5 align-[-2px]" aria-hidden /> {jadwal.slot.lokasi}
+              </span>
+            </Link>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              Belum ada jadwal.{" "}
+              <Link to="/siswa/jadwal/ajukan" className="font-medium text-primary underline-offset-4 hover:underline">
+                Ajukan konseling
+              </Link>{" "}
+              kalau ingin bertemu Guru BK langsung.
+            </p>
+          )}
+        </CardContent>
       </Card>
 
       <Card className="mt-6">

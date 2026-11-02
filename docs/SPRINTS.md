@@ -112,11 +112,13 @@ sistem-bk/
 | # | Tugas |
 |---|---|
 | 3.0 ✅ | **Performa & pembaruan otomatis.** Sesi disimpan 60 detik di browser (server tetap memeriksa sesi di setiap server function), data halaman di-cache 10 detik, query yang tidak saling bergantung dijalankan paralel, garis loading saat pindah halaman. Data baru muncul tanpa refresh lewat polling ringan `jejakFn` (jumlah aduan + `max(updated_at)`): 5 detik di halaman percakapan, 15 detik di halaman lain, berhenti saat tab tidak dilihat. Hasil ukur: pindah menu ±110 ms (sebelumnya menunggu cek sesi + lencana + data, ±0,5–1 detik); pengaduan baru tampil di dashboard Guru BK ≤ 15 detik, balasan tampil di percakapan ≤ 5 detik |
-| 3.1 | Skema: `slot_jadwal`, `jadwal_konseling`, `notifikasi`, `pengaturan` |
-| 3.2 | Guru BK: kalender slot, tambah/ubah/tutup, slot berulang, cegah tumpang tindih |
-| 3.3 | Siswa: wizard pengajuan; transaksi + row lock anti double-booking; batas 2 pengajuan aktif |
-| 3.4 | Guru BK: setujui/tolak (alasan wajib); slot kembali tersedia saat ditolak/batal |
-| 3.5 | Siswa: batalkan jadwal (≥ 2 jam sebelum sesi) |
+| 3.0b ✅ | **Bisa dipasang sebagai aplikasi (PWA).** Manifest (`start_url` /login, ikon maskable), tombol "Pasang aplikasi" di landing dan ajakan yang bisa ditutup di dashboard siswa & Guru BK (Chrome/Edge memakai dialog browser; iPhone diberi petunjuk Bagikan → Tambah ke Layar Utama). Service worker sengaja minimal: tidak menyimpan data pengaduan, hanya halaman "sedang offline" |
+| 3.0c ✅ | Tambahan antarmuka: sidebar baru (cari menu, sub-menu Pengaduan Masuk, kartu pengguna, mode ikon), logo resmi WhatsApp & Gmail, perintah `pnpm db:reset-aktivitas` + [panduan serah terima](SERAH-TERIMA.md) |
+| 3.1 ✅ | Skema: `slot_jadwal`, `jadwal_konseling` (migrasi 0003; constraint EXCLUDE anti tumpang tindih + indeks unik satu pengajuan aktif per slot). `notifikasi` & `pengaturan` menyusul di 3.7–3.8 |
+| 3.2 ✅ | Guru BK: kalender slot, tambah/ubah/tutup, slot berulang, cegah tumpang tindih |
+| 3.3 ✅ | Siswa: wizard pengajuan; transaksi + row lock anti double-booking; batas 2 pengajuan aktif |
+| 3.4 ✅ | Guru BK: setujui/tolak (alasan wajib); slot kembali tersedia saat ditolak/batal |
+| 3.5 ✅ | Siswa: batalkan jadwal (≥ 2 jam sebelum sesi). Hasil uji: [sprint-3.md](hasil-uji/sprint-3.md) |
 | 3.6 | Alur **buka identitas** dari aduan anonim (PRD §5.6) |
 | 3.7 | Admin: pengaturan Fonnte & SMTP (secret terenkripsi) + uji koneksi |
 | 3.8 | Layanan notifikasi: outbox, adapter Fonnte & Nodemailer, template pesan (versi aman untuk aduan anonim) |

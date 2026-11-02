@@ -4,6 +4,7 @@ import { PesanError } from "@/lib/errors"
 // Kode error Postgres: https://www.postgresql.org/docs/current/errcodes-appendix.html
 const UNIQUE_VIOLATION = "23505"
 const FOREIGN_KEY_VIOLATION = "23503"
+const EXCLUSION_VIOLATION = "23P01"
 
 type PgErr = { code?: string; constraint?: string; cause?: unknown }
 
@@ -19,6 +20,12 @@ export function indexDuplikat(e: unknown): string | null {
   const r = akar(e)
   if (r.code !== UNIQUE_VIOLATION) return null
   return r.constraint ?? "unknown"
+}
+
+/** Nama constraint EXCLUDE yang dilanggar (mis. slot tumpang tindih), atau null. */
+export function bentrokExclude(e: unknown): string | null {
+  const r = akar(e)
+  return r.code === EXCLUSION_VIOLATION ? (r.constraint ?? "unknown") : null
 }
 
 /** Error karena baris masih direferensikan foreign key. */

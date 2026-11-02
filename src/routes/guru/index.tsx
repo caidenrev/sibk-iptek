@@ -1,5 +1,5 @@
 import { Link, createFileRoute } from "@tanstack/react-router"
-import { CalendarClock, Flame, Inbox, Loader, Users } from "lucide-react"
+import { CalendarClock, Clock, Inbox, Loader, Users } from "lucide-react"
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts"
 import { PageHeader } from "@/components/app/page-header"
 import { AnonBadge, KodeTiket, StatusBadge, UrgensiBadge } from "@/components/app/status-badge"
@@ -7,11 +7,16 @@ import { Button } from "@/components/ui/button"
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import type { ChartConfig } from "@/components/ui/chart"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
+import { agendaGuruFn } from "@/server/functions/jadwal"
 import { ringkasanGuruFn } from "@/server/functions/pengaduan"
+import { jamTitik } from "@/lib/format"
 
 export const Route = createFileRoute("/guru/")({
   head: () => ({ meta: [{ title: "Dashboard Guru BK · SIBK" }] }),
-  loader: () => ringkasanGuruFn(),
+  loader: async () => {
+    const [ringkasan, agenda] = await Promise.all([ringkasanGuruFn(), agendaGuruFn()])
+    return { ...ringkasan, agenda }
+  },
   component: DashboardGuru,
 })
 
@@ -20,12 +25,12 @@ const chartConfig = { jumlah: { label: "Pengaduan", color: "var(--chart-1)" } } 
 const BULAN = new Intl.DateTimeFormat("id-ID", { month: "long", year: "numeric", timeZone: "Asia/Jakarta" })
 
 function DashboardGuru() {
-  const { angka, perKategori, terbaru } = Route.useLoaderData()
+  const { angka, perKategori, terbaru, agenda } = Route.useLoaderData()
   const stat = [
     { label: "Antrean anonim", nilai: angka.antrean, icon: Users },
     { label: "Aduan baru", nilai: angka.baru, icon: Inbox },
     { label: "Saya proses", nilai: angka.diprosesSaya, icon: Loader },
-    { label: "Urgensi tinggi", nilai: angka.mendesak, icon: Flame },
+    { label: "Pengajuan jadwal", nilai: agenda.menunggu, icon: CalendarClock },
   ]
   const totalBulanIni = perKategori.reduce((n, k) => n + k.jumlah, 0)
 
@@ -79,11 +84,47 @@ function DashboardGuru() {
         <Card className="self-start">
           <CardHeader>
             <CardTitle>Agenda hari ini</CardTitle>
-            <CardDescription>Jadwal konseling tatap muka sedang dibangun (Sprint 3).</CardDescription>
+            <CardDescription>Sesi konseling yang sudah kamu setujui.</CardDescription>
             <CardAction>
-              <CalendarClock className="size-5 text-muted-foreground" aria-hidden />
+              <Button asChild variant="ghost" size="sm" className="h-11 md:h-8">
+                <Link to="/guru/jadwal" search={{ tab: "disetujui" }}>Semua sesi</Link>
+              </Button>
             </CardAction>
           </CardHeader>
+          <CardContent className="grid gap-3">
+            {agenda.hariIni.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                Tidak ada sesi hari ini.
+                {agenda.menunggu > 0 && (
+                  <>
+                    {" "}
+                    <Link to="/guru/jadwal" className="font-medium text-primary underline-offset-4 hover:underline">
+                      {agenda.menunggu} pengajuan menunggu keputusanmu.
+                    </Link>
+                  </>
+                )}
+              </p>
+            ) : (
+              agenda.hariIni.map((a) => (
+                <div key={a.id} className="flex gap-3 rounded-xl border p-3">
+                  <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                    <Clock className="size-4" aria-hidden />
+                  </span>
+                  <div className="min-w-0 text-sm">
+                    <p className="tabular font-semibold">
+                      {jamTitik(a.slot.jamMulai)}–{jamTitik(a.slot.jamSelesai)} WIB
+                    </p>
+                    <p className="truncate">
+                      {a.siswa.nama} · {a.siswa.kelas}
+                    </p>
+                    <p className="truncate text-muted-foreground">
+                      {a.topik} · {a.slot.lokasi}
+                    </p>
+                  </div>
+                </div>
+              ))
+            )}
+          </CardContent>
         </Card>
       </div>
 

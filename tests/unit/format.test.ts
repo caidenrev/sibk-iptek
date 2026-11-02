@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { formatJam, formatRentangSesi, formatTanggal } from "@/lib/format"
+import { formatJam, formatRentangSesi, formatTanggal, formatHari, formatSlot, jamTitik } from "@/lib/format"
 
 describe("format tanggal WIB", () => {
   // 2 Nov 2026 03:00 UTC = 10:00 WIB
@@ -21,5 +21,16 @@ describe("format tanggal WIB", () => {
 
   it("membentuk rentang sesi", () => {
     expect(formatRentangSesi(mulai, selesai)).toBe("Senin, 2 Nov 2026 · 10.00–11.00 WIB")
+  })
+})
+
+describe("format slot jadwal", () => {
+  it("menulis hari dan tanggal slot tanpa geser zona waktu", () => {
+    expect(formatHari("2026-11-09")).toBe("Senin, 9 Nov")
+    expect(formatHari("2026-12-31")).toBe("Kamis, 31 Des")
+  })
+  it("memakai titik untuk jam", () => {
+    expect(jamTitik("07:30:00")).toBe("07.30")
+    expect(formatSlot("2026-11-09", "10:00", "11:00")).toBe("Senin, 9 Nov 2026 · 10.00–11.00 WIB")
   })
 })

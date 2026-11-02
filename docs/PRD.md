@@ -143,6 +143,7 @@ Pengajuan jadwal **tanpa** menautkan aduan tetap bisa dilakukan kapan saja.
 - Guru BK: setujui / tolak (alasan **wajib**) → notifikasi `konfirmasi` / `penolakan`. Ditolak atau batal → slot kembali `tersedia`.
 - **[REVISI]** Siswa dapat **membatalkan** jadwal (status `batal`) sampai 2 jam sebelum sesi; Guru BK diberi notifikasi.
 - **[REVISI]** Setelah sesi, Guru BK menandai `selesai` atau `tidak_hadir`.
+- **[REVISI, Sprint 3]** Aturan tambahan saat implementasi: slot yang sedang dipesan tidak bisa ditutup (tolak pengajuannya dulu); slot yang pernah punya pengajuan tidak bisa dihapus, hanya ditutup; Guru BK dapat membatalkan sesi yang sudah disetujui selama belum dimulai (status `ditolak` dengan alasan wajib); batas 2 pengajuan aktif hanya menghitung sesi yang belum dimulai. Semua perhitungan waktu memakai jam database (WIB).
 
 ### 5.8 Notifikasi (KF-10, KF-14) — Sprint 3
 Jenis notifikasi:
@@ -232,7 +233,7 @@ Ancaman dan mitigasinya:
 
 **tanggapan**: id, pengaduan_id, pengirim (`siswa|guru_bk`), ➕`user_id` (*nullable*: penulis Guru BK; null untuk siswa anonim), isi, created_at
 
-**slot_jadwal**: id, guru_bk_id, tanggal, jam_mulai, jam_selesai, lokasi, ✏️status (`tersedia|dipesan|ditutup`) · ➕ unik `(guru_bk_id, tanggal, jam_mulai)`
+**slot_jadwal**: id, guru_bk_id, tanggal, jam_mulai, jam_selesai, lokasi, ✏️status (`tersedia|dipesan|ditutup`), ➕created_at, ➕updated_at · **[REVISI]** constraint `EXCLUDE` (btree_gist): slot Guru BK yang sama tidak boleh beririsan waktunya (lebih ketat dari unik `(guru_bk_id, tanggal, jam_mulai)`, yang hanya menolak jam mulai yang sama); slot ditutup tidak dihitung
 
 **jadwal_konseling**: id, siswa_id, slot_id, pengaduan_id (*null*), topik, ✏️status (`menunggu|disetujui|ditolak|selesai|batal|tidak_hadir`), alasan_penolakan, ➕`diputuskan_pada`, created_at, ➕`updated_at`
 

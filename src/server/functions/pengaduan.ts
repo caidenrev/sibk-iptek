@@ -300,7 +300,7 @@ export const lencanaFn = createServerFn({ method: "GET" })
         })
         .from(pengaduan)
         .where(eq(pengaduan.pengirimHash, hashPengirim(u.siswaId)))
-      return { pengaduan: r.n }
+      return { pengaduan: r.n, jadwal: 0 }
     }
     if (u.role === "guru_bk") {
       const [r] = await db
@@ -308,15 +308,22 @@ export const lencanaFn = createServerFn({ method: "GET" })
           n: sql<number>`count(*) filter (where ${P.status} <> 'selesai' and (${P.guruBkId} is null or ${P.guruBkId} = ${u.guruBkId ?? -1}) and coalesce(${balasanTerakhir("siswa")}, ${P.createdAt}) > coalesce(${P.dibacaGuru}, 'epoch'::timestamptz))`.mapWith(Number),
         })
         .from(pengaduan)
-      return { pengaduan: r.n }
+      // Pengajuan jadwal yang menunggu keputusan dan waktunya belum lewat.
+      const [{ jadwal }] = await db
+        .execute<{ jadwal: number }>(sql`
+          select count(*)::int as jadwal from jadwal_konseling j join slot_jadwal s on s.id = j.slot_id
+          where s.guru_bk_id = ${u.guruBkId ?? -1} and j.status = 'menunggu'
+            and ((s.tanggal + s.jam_mulai) at time zone 'Asia/Jakarta') > now()`)
+        .then((x) => x.rows)
+      return { pengaduan: r.n, jadwal }
     }
-    return { pengaduan: 0 }
+    return { pengaduan: 0, jadwal: 0 }
   })
 
 /**
  * Jejak perubahan: jumlah pengaduan + waktu perubahan terakhir yang terlihat oleh user ini.
  * Browser menanyakannya berkala; data halaman baru dimuat ulang kalau jejaknya berubah.
- * Semua aksi (aduan baru, balasan, klaim, ubah status) memperbarui `updated_at`.
+ * Semua aksi (aduan baru, balasan, klaim, ubah status, pengajuan & keputusan jadwal) memperbarui `updated_at`.
  */
 export const jejakFn = createServerFn({ method: "GET" })
   .middleware([authMw])
@@ -327,7 +334,16 @@ export const jejakFn = createServerFn({ method: "GET" })
       .select({ n: count(), terakhir: sql<string>`coalesce(max(${pengaduan.updatedAt})::text, '')` })
       .from(pengaduan)
       .where(u.role === "siswa" ? eq(pengaduan.pengirimHash, hashPengirim(u.siswaId ?? -1)) : undefined)
-    return { jejak: `${r.n}|${r.terakhir}` }
+    // Jadwal: milik siswa ini, atau pengajuan pada slot Guru BK ini.
+    const [j] = await db
+      .execute<{ n: number; t: string }>(
+        u.role === "siswa"
+          ? sql`select count(*)::int as n, coalesce(max(updated_at)::text, '') as t from jadwal_konseling where siswa_id = ${u.siswaId ?? -1}`
+          : sql`select count(*)::int as n, coalesce(max(j.updated_at)::text, '') as t
+                from jadwal_konseling j join slot_jadwal s on s.id = j.slot_id where s.guru_bk_id = ${u.guruBkId ?? -1}`
+      )
+      .then((x) => x.rows)
+    return { jejak: `${r.n}|${r.terakhir}|${j.n}|${j.t}` }
   })
 
 // ================================================================ ringkasan dashboard Guru BK

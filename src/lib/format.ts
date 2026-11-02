@@ -44,3 +44,18 @@ export function formatJam(d: Date | string | number) {
 export function formatRentangSesi(mulai: Date | string | number, selesai: Date | string | number) {
   return `${formatTanggal(mulai)} · ${formatJam(mulai)}–${formatJam(selesai)} WIB`
 }
+
+const hariTanggal = new Intl.DateTimeFormat("id-ID", { timeZone: APP_TZ, weekday: "long", day: "numeric", month: "short" })
+
+/** "2026-11-09" → "Senin, 9 Nov". Untuk tanggal slot (tanpa jam). */
+export function formatHari(tanggal: string) {
+  return hariTanggal.format(new Date(`${tanggal}T12:00:00+07:00`))
+}
+
+/** "10:00" → "10.00" (penulisan jam di Indonesia) */
+export const jamTitik = (j: string) => j.slice(0, 5).replace(":", ".")
+
+/** Slot jadwal: "Senin, 9 Nov 2026 · 10.00–11.00 WIB" */
+export function formatSlot(tanggal: string, jamMulai: string, jamSelesai: string) {
+  return `${formatTanggal(`${tanggal}T12:00:00+07:00`)} · ${jamTitik(jamMulai)}–${jamTitik(jamSelesai)} WIB`
+}

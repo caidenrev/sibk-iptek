@@ -22,3 +22,6 @@ test-results/
 playwright-report/
 coverage/
 .vercel
+
+# Naskah skripsi (berkas pribadi, tidak ikut repo)
+docs/naskah/

@@ -431,7 +431,9 @@ function PilihLampiran({
         ref={input}
         id="lampiran"
         type="file"
-        className="sr-only"
+        // Dipicu lewat tombol "Pilih foto" (input.click()). Tidak pakai sr-only karena Field
+        // memaksa anaknya selebar penuh sehingga halaman melebar di HP.
+        className="hidden"
         accept={anonim ? "image/jpeg,image/png,image/webp" : "image/jpeg,image/png,image/webp,application/pdf"}
         onChange={(e) => {
           const f = e.target.files?.[0]

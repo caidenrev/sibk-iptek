@@ -135,7 +135,7 @@ sistem-bk/
 
 ---
 
-## Sprint 4 — Catatan, riwayat, dashboard, laporan, perbaikan
+## Sprint 4 — Catatan, riwayat, dashboard, laporan, perbaikan ✅ selesai · [hasil uji](hasil-uji/sprint-4.md)
 **Backlog:** PB-12 s.d. PB-15 · **KF:** 02, 11, 12
 
 | # | Tugas |
@@ -146,8 +146,8 @@ sistem-bk/
 | 4.4 ✅ | Dashboard siswa, Guru BK, admin memakai data asli: grafik per kategori + tren 6 bulan (Guru BK), jadwal terdekat (siswa), kesehatan notifikasi (admin) |
 | 4.5 ✅ | Laporan: filter periode/kategori/Guru BK, ringkasan, **PDF** (kop sekolah, `@react-pdf/renderer`). Excel belum dibuat (opsional) |
 | 4.6 ✅ | Profil lengkap (PB-15): email & WA + verifikasi, ganti password, kirim tes notifikasi (dibangun bertahap sejak Sprint 1) |
-| 4.7 | Perbaikan dari Sprint Review 1–3, polishing responsif & aksesibilitas, cek kinerja (< 3 detik) |
-| 4.8 | Panduan deploy + seed data demo untuk UAT |
+| 4.7 ✅ | Audit 22 halaman di layar HP (bergeser, label, target sentuh) + perbaikan; kinerja < 3 detik (sesi per request, query paralel) |
+| 4.8 ✅ | [Panduan deploy & UAT](DEPLOY.md) + `pnpm db:seed-demo` |
 
 **Black Box:** BB-10, BB-24, BB-25 · [hasil uji](hasil-uji/sprint-4.md)
 

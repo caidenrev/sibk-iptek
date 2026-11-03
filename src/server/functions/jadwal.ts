@@ -272,12 +272,11 @@ export const agendaGuruFn = createServerFn({ method: "GET" })
 export const opsiGuruJadwalFn = createServerFn({ method: "GET" })
   .middleware([siswaMw])
   .handler(async ({ context }) => {
-    const [saya] = await db.select({ kelasId: siswa.kelasId }).from(siswa).where(eq(siswa.id, context.user.siswaId ?? -1))
     const rows = await db
       .select({
         id: guruBk.id,
         nama: users.nama,
-        pembina: sql<boolean>`exists (select 1 from kelas k where k.id = ${saya?.kelasId ?? -1} and k.guru_bk_id = ${guruBk.id})`,
+        pembina: sql<boolean>`exists (select 1 from kelas k join siswa s on s.kelas_id = k.id where s.id = ${context.user.siswaId ?? -1} and k.guru_bk_id = ${guruBk.id})`,
         slotTersedia: sql<number>`(select count(*) from slot_jadwal s where s.guru_bk_id = ${guruBk.id} and s.status = 'tersedia'
           and ((s.tanggal + s.jam_mulai) at time zone 'Asia/Jakarta') >= now() + interval '${sql.raw(String(BATAS_JAM))} hours'
           and s.tanggal <= (now() at time zone 'Asia/Jakarta')::date + ${HARI_KE_DEPAN}::int)`.mapWith(Number),

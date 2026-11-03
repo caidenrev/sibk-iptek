@@ -67,9 +67,13 @@ function Riwayat() {
 
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <Tabs value={tab} onValueChange={(v) => setTab(v as "aktif")}>
-          <TabsList>
-            <TabsTrigger value="aktif">Aktif ({semua.filter((p) => p.status !== "selesai").length})</TabsTrigger>
-            <TabsTrigger value="selesai">Selesai ({semua.filter((p) => p.status === "selesai").length})</TabsTrigger>
+          <TabsList className="group-data-horizontal/tabs:h-auto">
+            <TabsTrigger value="aktif" className="h-10 px-3 md:h-8">
+              Aktif ({semua.filter((p) => p.status !== "selesai").length})
+            </TabsTrigger>
+            <TabsTrigger value="selesai" className="h-10 px-3 md:h-8">
+              Selesai ({semua.filter((p) => p.status === "selesai").length})
+            </TabsTrigger>
           </TabsList>
         </Tabs>
         <form

@@ -17,6 +17,7 @@
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "db:seed": "tsx --env-file=.env src/server/db/seed.ts",
+    "db:seed-demo": "tsx --env-file=.env src/server/db/seed-demo.ts",
     "db:reset-aktivitas": "tsx --env-file=.env src/server/db/reset-aktivitas.ts",
     "test": "vitest run",
     "test:watch": "vitest",

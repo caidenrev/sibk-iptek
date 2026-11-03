@@ -47,7 +47,7 @@ export function AppShell({ user, children, lencana }: { user: ShellUser; childre
 
       <SidebarInset>
         <header className="sticky top-0 z-20 flex h-16 shrink-0 items-center gap-2 border-b bg-background/90 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/75 md:px-6">
-          <SidebarTrigger className={cn("-ml-1", isSiswa && "max-md:hidden")} aria-label="Buka/tutup menu" />
+          <SidebarTrigger className={cn("-ml-1 max-md:size-11", isSiswa && "max-md:hidden")} aria-label="Buka/tutup menu" />
           <span aria-hidden className={cn("mr-1 h-5 w-px bg-border", isSiswa && "max-md:hidden")} />
           <Logo subtitle={false} className={cn("md:hidden", !isSiswa && "hidden")} />
           <span className={cn("truncate text-sm font-medium", isSiswa && "max-md:hidden")}>

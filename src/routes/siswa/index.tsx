@@ -85,7 +85,7 @@ function DashboardSiswa() {
           <CardTitle>Pengaduan aktif</CardTitle>
           <CardDescription>Balasan Guru BK muncul di sini.</CardDescription>
           <CardAction>
-            <Button asChild variant="ghost" size="sm">
+            <Button asChild variant="ghost" size="sm" className="h-11 md:h-8">
               <Link to="/siswa/pengaduan">Lihat semua</Link>
             </Button>
           </CardAction>

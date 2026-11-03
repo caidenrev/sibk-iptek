@@ -1,6 +1,6 @@
 import { Link, createFileRoute } from "@tanstack/react-router"
 import { CalendarClock, Clock, Inbox, Loader, Users } from "lucide-react"
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts"
+import { Bar, BarChart, CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts"
 import { PageHeader } from "@/components/app/page-header"
 import { AnonBadge, KodeTiket, StatusBadge, UrgensiBadge } from "@/components/app/status-badge"
 import { Button } from "@/components/ui/button"
@@ -23,9 +23,10 @@ export const Route = createFileRoute("/guru/")({
 const chartConfig = { jumlah: { label: "Pengaduan", color: "var(--chart-1)" } } satisfies ChartConfig
 
 const BULAN = new Intl.DateTimeFormat("id-ID", { month: "long", year: "numeric", timeZone: "Asia/Jakarta" })
+const NAMA_BULAN = new Intl.DateTimeFormat("id-ID", { month: "short", timeZone: "Asia/Jakarta" })
 
 function DashboardGuru() {
-  const { angka, perKategori, terbaru, agenda } = Route.useLoaderData()
+  const { angka, perKategori, terbaru, agenda, tren } = Route.useLoaderData()
   const stat = [
     { label: "Antrean anonim", nilai: angka.antrean, icon: Users },
     { label: "Aduan baru", nilai: angka.baru, icon: Inbox },
@@ -127,6 +128,24 @@ function DashboardGuru() {
           </CardContent>
         </Card>
       </div>
+
+      <Card className="mt-6">
+        <CardHeader>
+          <CardTitle>Tren pengaduan</CardTitle>
+          <CardDescription>6 bulan terakhir</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ChartContainer config={chartConfig} className="aspect-auto h-48 w-full">
+            <LineChart data={tren.map((t) => ({ ...t, label: NAMA_BULAN.format(new Date(`${t.bulan}-15T12:00:00+07:00`)) }))} margin={{ left: -16, right: 12, top: 8 }} accessibilityLayer>
+              <CartesianGrid vertical={false} />
+              <XAxis dataKey="label" tickLine={false} axisLine={false} tickMargin={8} />
+              <YAxis allowDecimals={false} tickLine={false} axisLine={false} width={40} />
+              <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
+              <Line dataKey="jumlah" type="monotone" stroke="var(--color-jumlah)" strokeWidth={2} dot={{ r: 3 }} />
+            </LineChart>
+          </ChartContainer>
+        </CardContent>
+      </Card>
 
       <Card className="mt-6">
         <CardHeader>

@@ -420,9 +420,21 @@ export const ringkasanGuruFn = createServerFn({ method: "GET" })
         .limit(5),
     ])
 
+    // Tren 6 bulan terakhir (WIB), termasuk bulan tanpa aduan.
+    const tren = await db
+      .execute<{ bulan: string; jumlah: number }>(sql`
+        select to_char(b.awal, 'YYYY-MM') as bulan, count(p.id)::int as jumlah
+        from generate_series(date_trunc('month', now() at time zone 'Asia/Jakarta') - interval '5 months',
+                             date_trunc('month', now() at time zone 'Asia/Jakarta'), interval '1 month') as b(awal)
+        left join pengaduan p on (p.created_at at time zone 'Asia/Jakarta') >= b.awal
+                             and (p.created_at at time zone 'Asia/Jakarta') < b.awal + interval '1 month'
+        group by b.awal order by b.awal`)
+      .then((r) => r.rows)
+
     return {
       angka,
       perKategori,
+      tren,
       terbaru: terbaru.map((r) => {
         const { isi: _isi, ...v } = keTampilanGuru(r, context.user.guruBkId)
         return v

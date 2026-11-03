@@ -117,6 +117,7 @@ export function FormPassword<T extends FieldValues>({
             <InputGroupAddon align="inline-end">
               <InputGroupButton
                 size="icon-xs"
+                className="max-md:size-9"
                 onClick={() => setLihat((v) => !v)}
                 aria-label={lihat ? "Sembunyikan password" : "Tampilkan password"}
                 aria-pressed={lihat}

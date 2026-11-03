@@ -57,7 +57,7 @@ function DashboardAdmin() {
           </CardTitle>
           <CardDescription>30 hari terakhir, tanpa pesan uji</CardDescription>
           <CardAction>
-            <Button asChild variant="ghost" size="sm">
+            <Button asChild variant="ghost" size="sm" className="h-11 md:h-8">
               <Link to="/admin/notifikasi">Buka log</Link>
             </Button>
           </CardAction>

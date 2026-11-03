@@ -1,6 +1,6 @@
 import "@tanstack/react-start/server-only"
 import { createHash, randomBytes } from "node:crypto"
-import { deleteCookie, getCookie, getRequestHeader, getRequestIP, setCookie } from "@tanstack/react-start/server"
+import { deleteCookie, getCookie, getRequest, getRequestHeader, getRequestIP, setCookie } from "@tanstack/react-start/server"
 import { and, eq, gt, lt } from "drizzle-orm"
 import { db } from "../db/client"
 import { guruBk, kelas, sesi, siswa, users } from "../db/schema"
@@ -71,8 +71,30 @@ export async function hapusSemuaSesi(userId: number, kecualiSaatIni = false) {
   for (const r of rows) if (r.tokenHash !== keep) await db.delete(sesi).where(eq(sesi.id, r.id))
 }
 
-/** Ambil user dari cookie sesi. null bila tidak login / sesi habis / akun nonaktif. */
-export async function userDariSesi(): Promise<SessionUser | null> {
+const sesiPerRequest = new WeakMap<Request, Promise<SessionUser | null>>()
+
+/**
+ * Ambil user dari cookie sesi. null bila tidak login / sesi habis / akun nonaktif.
+ * Hasilnya disimpan per request: satu halaman bisa memanggil beberapa server function
+ * sekaligus, dan cukup satu query sesi untuk semuanya.
+ */
+export function userDariSesi(): Promise<SessionUser | null> {
+  let req: Request | undefined
+  try {
+    req = getRequest()
+  } catch {
+    req = undefined
+  }
+  if (!req) return cariUserDariSesi()
+  let p = sesiPerRequest.get(req)
+  if (!p) {
+    p = cariUserDariSesi()
+    sesiPerRequest.set(req, p)
+  }
+  return p
+}
+
+async function cariUserDariSesi(): Promise<SessionUser | null> {
   const token = getCookie(COOKIE)
   if (!token) return null
 

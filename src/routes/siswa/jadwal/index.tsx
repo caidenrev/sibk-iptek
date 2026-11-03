@@ -52,9 +52,13 @@ function JadwalSaya() {
       />
 
       <Tabs defaultValue="mendatang">
-        <TabsList>
-          <TabsTrigger value="mendatang">Mendatang ({mendatang.length})</TabsTrigger>
-          <TabsTrigger value="riwayat">Riwayat ({riwayat.length})</TabsTrigger>
+        <TabsList className="group-data-horizontal/tabs:h-auto">
+          <TabsTrigger value="mendatang" className="h-10 px-3 md:h-8">
+            Mendatang ({mendatang.length})
+          </TabsTrigger>
+          <TabsTrigger value="riwayat" className="h-10 px-3 md:h-8">
+            Riwayat ({riwayat.length})
+          </TabsTrigger>
         </TabsList>
         <TabsContent value="mendatang" className="mt-4">
           {mendatang.length === 0 ? (

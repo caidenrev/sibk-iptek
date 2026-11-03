@@ -8,7 +8,7 @@ Rekap pelaksanaan Scrum untuk penulisan BAB IV: tujuan tiap sprint, backlog yang
 | 1 | 30 Okt 2026 | Pengguna bisa login sesuai peran; admin mengelola data master | BB-01, 02, 11–14, 26–30 | ✅ |
 | 2 | 1 Nov 2026 | Siswa bisa mengadu (anonim/beridentitas) dan Guru BK menanggapi | BB-03–06, 15–17 | ✅ |
 | 3 | 2 Nov 2026 | Konseling tatap muka bisa dijadwalkan; notifikasi WA & email | BB-06–09, 18–23 | ✅ |
-| 4 | 3 Nov 2026 | Catatan konseling, riwayat, laporan PDF | BB-10, 24, 25 | ✅ 4.1–4.6 · ⏳ 4.7–4.8 |
+| 4 | 3 Nov 2026 | Catatan konseling, riwayat, laporan PDF, perbaikan akhir | BB-10, 24, 25 | ✅ |
 
 Total: **30 skenario Black Box, semuanya sesuai**. Uji otomatis pendukung: 46 unit test (Vitest).
 
@@ -70,7 +70,9 @@ Total: **30 skenario Black Box, semuanya sesuai**. Uji otomatis pendukung: 46 un
 **Retrospektif**
 - PDF gagal dibuat di build produksi karena font bawaan react-pdf hilang saat kode dibundel → paket react-pdf dan pdfkit disalin utuh ke hasil build (`traceDeps` Nitro), dicek di build node dan Vercel.
 - Nomor halaman PDF tidak tampil di react-pdf 4.3 → dihapus; tidak memengaruhi isi laporan.
-- Sisa: 4.7 (polishing tampilan, aksesibilitas, kinerja) dan 4.8 (panduan deploy, data demo UAT).
+- 4.7: audit 22 halaman di layar HP menemukan form pengaduan bergeser ke samping dan beberapa target sentuh terlalu kecil → diperbaiki. Kinerja: semua halaman < 3 detik (kunjungan berikutnya 0,5–1,4 detik) setelah sesi disimpan per request dan query dijalankan paralel.
+- 4.8: panduan deploy & UAT ([DEPLOY.md](DEPLOY.md)) dan data demo `pnpm db:seed-demo`.
+- Langkah berikutnya di luar sprint: UAT dengan Guru BK dan siswa, lalu serah terima ([SERAH-TERIMA.md](SERAH-TERIMA.md)).
 
 ---
 

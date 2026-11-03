@@ -12,12 +12,14 @@ const preset = process.env.NITRO_PRESET ?? (process.env.VERCEL ? "vercel" : "nod
 
 const config = defineConfig({
   resolve: { tsconfigPaths: true },
+  // Lihat catatan traceDeps di bawah: react-pdf dibiarkan sebagai paket utuh di node_modules.
+  ssr: { external: ["@react-pdf/renderer"] },
   plugins: [
     tailwindcss(),
     tanstackStart(),
     // react-pdf membaca font bawaan (#standard-fonts) dari paketnya sendiri; bila ikut di-bundle
     // font itu hilang dan PDF gagal dibuat. Paket ini disalin utuh ke hasil build, tidak di-bundle.
-    nitro({ preset, traceDeps: ["@react-pdf/*"] }),
+    nitro({ preset, traceDeps: ["@react-pdf/renderer*", "@react-pdf/pdfkit*", "@react-pdf/font*", "pdfkit*"] }),
     viteReact(),
   ],
 })

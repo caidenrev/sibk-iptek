@@ -140,16 +140,16 @@ sistem-bk/
 
 | # | Tugas |
 |---|---|
-| 4.1 | Skema: `catatan_konseling` |
-| 4.2 | ~~Tandai sesi selesai / tidak hadir~~ (sudah di Sprint 3); form catatan (+ tampilkan tindak lanjut ke siswa) |
-| 4.3 | Siswa: riwayat konseling |
-| 4.4 | Dashboard siswa, Guru BK, admin (kartu + grafik). Sebagian sudah: kartu & grafik bulan berjalan memakai data asli (Sprint 2–3), kesehatan notifikasi admin dari tabel notifikasi. Sisa: grafik tren 6 bulan, sesi hari ini/riwayat |
-| 4.5 | Laporan: filter periode/kategori/Guru BK, ringkasan, **PDF** (kop sekolah), opsional Excel |
-| 4.6 | Profil lengkap (PB-15) |
+| 4.1 ✅ | Skema: `catatan_konseling` (migrasi 0005, + `perlu_lanjutan`) |
+| 4.2 ✅ | Halaman detail sesi Guru BK: tandai selesai/tidak hadir, form catatan (+ tampilkan tindak lanjut ke siswa, penanda perlu sesi lanjutan), riwayat sesi siswa dengan Guru BK yang sama |
+| 4.3 ✅ | Siswa: riwayat konseling dengan tindak lanjut dari Guru BK |
+| 4.4 ✅ | Dashboard siswa, Guru BK, admin memakai data asli: grafik per kategori + tren 6 bulan (Guru BK), jadwal terdekat (siswa), kesehatan notifikasi (admin) |
+| 4.5 ✅ | Laporan: filter periode/kategori/Guru BK, ringkasan, **PDF** (kop sekolah, `@react-pdf/renderer`). Excel belum dibuat (opsional) |
+| 4.6 ✅ | Profil lengkap (PB-15): email & WA + verifikasi, ganti password, kirim tes notifikasi (dibangun bertahap sejak Sprint 1) |
 | 4.7 | Perbaikan dari Sprint Review 1–3, polishing responsif & aksesibilitas, cek kinerja (< 3 detik) |
 | 4.8 | Panduan deploy + seed data demo untuk UAT |
 
-**Black Box:** BB-10, BB-24, BB-25
+**Black Box:** BB-10, BB-24, BB-25 · [hasil uji](hasil-uji/sprint-4.md)
 
 ---
 

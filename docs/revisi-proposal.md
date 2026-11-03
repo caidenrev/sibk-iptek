@@ -46,3 +46,54 @@ Fungsi sistem, rancangan tabel, relasi, dan metode penelitian **tidak berubah**.
 | Tabel 3.20 Halaman | Tambah "Lupa Password" (semua pengguna). |
 | Tabel 3.21 Black Box | Tambah BB-26 s.d. BB-30 (lihat SPRINTS.md). |
 | 2.2.6 Email (SMTP) | Bisa ditambah: layanan email transaksional (mis. Resend) yang diakses lewat SMTP dengan Nodemailer. |
+
+
+---
+
+# Catatan Revisi 3 — Hasil implementasi Sprint 2 s.d. 4
+
+> 3 November 2026 · Perubahan yang muncul saat implementasi. Konsultasikan ke dosen pembimbing; sebagian besar cukup ditambahkan di BAB IV sebagai hasil Sprint Review.
+
+## Arsitektur & teknologi (BAB II 2.2, BAB III 3.2.3 + Gambar 3.3)
+
+| Bagian | Usulan |
+|---|---|
+| Hosting | Aplikasi di **Vercel** (serverless), basis data **PostgreSQL di Supabase** |
+| Penyimpanan lampiran | **Supabase Storage** (bucket privat, hanya diakses lewat server) karena Vercel tidak punya disk permanen. Foto diproses ulang dengan `sharp` untuk menghapus EXIF |
+| Notifikasi | Email lewat **Resend** (SMTP + Nodemailer), WhatsApp lewat **Fonnte**. Pesan disimpan dulu di tabel `notifikasi` (pola *outbox*), dikirim langsung lalu dicoba ulang maksimal 3 kali |
+| Penjadwal (cron) | **cron-job.org** memanggil endpoint `/api/cron` tiap menit, karena cron Vercel versi gratis hanya sekali sehari. Endpoint dilindungi kunci rahasia `CRON_SECRET` |
+| Laporan PDF | `@react-pdf/renderer` di server (kop sekolah, tanda tangan Kepala Sekolah & Guru BK) |
+| PWA | Aplikasi bisa dipasang di HP/laptop (manifest + service worker). Service worker sengaja tidak menyimpan data pengaduan |
+| Pembaruan data | Tanpa refresh: browser mengecek "ada perubahan?" setiap 5 detik (halaman percakapan) atau 15 detik (halaman lain) |
+
+## Kebutuhan & aturan (BAB III Tabel 3.2, 3.3)
+
+- **Pengaduan:** lampiran PDF hanya untuk mode beridentitas (metadata PDF bisa memuat nama penulis). Tanda "belum dibaca" memakai `dibaca_siswa_pada` / `dibaca_guru_pada` di tabel `pengaduan`.
+- **Buka identitas (KNF-02):** hanya untuk satu aduan yang dipilih, tidak bisa dibatalkan; `is_anonim` tetap tercatat agar statistik tidak berubah.
+- **Jadwal:** slot yang sedang dipesan tidak bisa ditutup; slot yang pernah punya pengajuan tidak bisa dihapus; Guru BK bisa membatalkan sesi yang sudah disetujui (alasan wajib); batas 2 pengajuan aktif hanya menghitung sesi yang belum dimulai.
+- **Notifikasi:** hanya ke kontak yang sudah diverifikasi; pesan untuk aduan anonim tidak memuat isi/judul aduan; notifikasi balasan maksimal sekali per 30 menit per aduan; di log admin isi pesan tidak ditampilkan dan penerima aduan anonim disamarkan.
+- **Pengaturan admin:** hanya token Fonnte yang diubah lewat halaman admin (terenkripsi). SMTP tetap di konfigurasi server karena terikat domain pengirim.
+- **Catatan konseling:** ringkasan masalah hanya untuk Guru BK penulisnya; siswa hanya melihat tindak lanjut bila dicentang; admin tidak bisa membuka catatan.
+- **Laporan:** ekspor Excel (opsional di PRD) belum dibuat; PDF sudah.
+
+## ERD & kamus data (BAB III 3.4.3, Tabel 3.9–3.19)
+
+| Tabel | Perubahan |
+|---|---|
+| `pengaduan` | + `dibaca_siswa_pada`, `dibaca_guru_pada`, `updated_at` |
+| `tanggapan` | Tanpa `dibaca_pada` (dipindah ke `pengaduan`); `user_id` NULL untuk pesan siswa |
+| `slot_jadwal` | + `created_at`, `updated_at`; aturan "tidak tumpang tindih" dijaga constraint **EXCLUDE** PostgreSQL (lebih ketat dari unik `(guru_bk_id, tanggal, jam_mulai)`) |
+| `jadwal_konseling` | Indeks unik parsial: satu pengajuan aktif per slot (anti *double booking*) |
+| `notifikasi` | + `tujuan`, `subjek`, `html`, `kunci`, `diklaim_pada`; unik `(user_id, kanal, kunci)` |
+| `pengaturan` | Tabel baru: `kunci`, `nilai` (terenkripsi bila rahasia), `is_rahasia`, `updated_at` |
+| `catatan_konseling` | + `guru_bk_id`, `tampilkan_ke_siswa`, `perlu_lanjutan`, `updated_at` |
+
+Migrasi: `drizzle/0000` s.d. `0005`.
+
+## Halaman (Tabel 3.20)
+
+Tambah: **Detail Sesi** (Guru BK, `/guru/jadwal/$id`), **Pengaturan Notifikasi** & **Log Notifikasi** (Admin), **Laporan** + unduh PDF (Guru BK & Admin), halaman **offline** (PWA).
+
+## Pengujian (Tabel 3.21)
+
+BB-01 s.d. BB-30 seluruhnya sudah diuji dan sesuai. Rinciannya di `docs/hasil-uji/sprint-1.md` s.d. `sprint-4.md`.

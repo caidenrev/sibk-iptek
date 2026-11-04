@@ -359,6 +359,28 @@ export const notifikasi = pgTable(
   ]
 ).enableRLS()
 
+/**
+ * Kotak notifikasi di aplikasi (ikon lonceng). Dibuat dari kejadian yang sama dengan pesan WA/email,
+ * tetapi untuk setiap penerima, termasuk yang belum mengisi kontak. Isi tidak memuat judul/isi aduan.
+ */
+export const pemberitahuan = pgTable(
+  "pemberitahuan",
+  {
+    id: id(),
+    userId: fk("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    jenis: varchar("jenis", { length: 40 }).notNull(),
+    judul: varchar("judul", { length: 120 }).notNull(),
+    isi: varchar("isi", { length: 300 }).notNull(),
+    tautan: varchar("tautan", { length: 200 }).notNull(),
+    kunci: varchar("kunci", { length: 120 }).notNull(),
+    dibacaPada: waktu("dibaca_pada"),
+    createdAt: createdAt(),
+  },
+  (t) => [uniqueIndex("pemberitahuan_kunci_unik").on(t.userId, t.kunci), index("pemberitahuan_user_idx").on(t.userId, t.id)]
+).enableRLS()
+
 /** Pengaturan aplikasi yang bisa diubah admin (mis. token Fonnte). Nilai rahasia disimpan terenkripsi. */
 export const pengaturan = pgTable("pengaturan", {
   kunci: varchar("kunci", { length: 60 }).primaryKey(),

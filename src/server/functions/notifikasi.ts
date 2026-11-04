@@ -1,10 +1,10 @@
 // Pengaturan & log notifikasi (Sprint 3 · tugas 3.7, 3.10, 3.11).
 import { createServerFn } from "@tanstack/react-start"
-import { and, count, desc, eq } from "drizzle-orm"
+import { and, count, desc, eq, isNull, sql } from "drizzle-orm"
 import type { SQL } from "drizzle-orm"
 import { z } from "zod"
 import { db } from "../db/client"
-import { KANAL, STATUS_NOTIF, notifikasi, users } from "../db/schema"
+import { KANAL, STATUS_NOTIF, notifikasi, pemberitahuan, users } from "../db/schema"
 import { env } from "../env"
 import { emailAktif } from "../notif/kirim"
 import { catatNotifikasi, hasilNotifikasi, kirimAntrean, kirimTesKe, kirimUlang, ujiFonnte } from "../services/notifikasi"
@@ -140,4 +140,40 @@ export const tesNotifikasiSayaFn = createServerFn({ method: "POST" })
     if (ids.length === 0) throw new PesanError("Belum ada email atau nomor WhatsApp yang terverifikasi. Verifikasi dulu di atas.")
     await kirimAntrean({ ids })
     return hasilNotifikasi(ids)
+  })
+
+// ================================================================ lonceng di aplikasi (siswa & Guru BK)
+
+/** 20 notifikasi terbaru milik user yang login, plus jam server (untuk "5 menit lalu" yang tepat). */
+export const daftarPemberitahuanFn = createServerFn({ method: "GET" })
+  .middleware([authMw])
+  .handler(async ({ context }) => {
+    const item = await db
+      .select({
+        id: pemberitahuan.id,
+        jenis: pemberitahuan.jenis,
+        judul: pemberitahuan.judul,
+        isi: pemberitahuan.isi,
+        tautan: pemberitahuan.tautan,
+        dibaca: sql<boolean>`${pemberitahuan.dibacaPada} is not null`,
+        waktu: pemberitahuan.createdAt,
+      })
+      .from(pemberitahuan)
+      .where(eq(pemberitahuan.userId, context.user.id))
+      .orderBy(desc(pemberitahuan.id))
+      .limit(20)
+    // Waktu dibuat berasal dari jam database; "sekarang" juga diambil dari sana supaya selisihnya tepat.
+    const [{ sekarang }] = await db.execute<{ sekarang: string }>(sql`select now()::text as sekarang`).then((r) => r.rows)
+    return { item, sekarang: new Date(sekarang).getTime() }
+  })
+
+/** Tandai semua notifikasi user ini sudah dibaca (saat daftar lonceng dibuka). */
+export const tandaiPemberitahuanFn = createServerFn({ method: "POST" })
+  .middleware([authMw])
+  .handler(async ({ context }) => {
+    await db
+      .update(pemberitahuan)
+      .set({ dibacaPada: sql`now()` })
+      .where(and(eq(pemberitahuan.userId, context.user.id), isNull(pemberitahuan.dibacaPada)))
+    return { ok: true }
   })

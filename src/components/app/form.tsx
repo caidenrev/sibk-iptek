@@ -26,8 +26,13 @@ export function FormInput<T extends FieldValues>({
   className,
   disabled,
   ikon,
+  awalan,
   ...input
-}: Dasar<T> & { ikon?: React.ReactNode } & Omit<React.ComponentProps<typeof Input>, "name" | "defaultValue" | "value" | "onChange">) {
+}: Dasar<T> & {
+  ikon?: React.ReactNode
+  /** Ikon di dalam kolom, di sisi kiri (diberi data-awalan supaya bisa disembunyikan per tata letak). */
+  awalan?: React.ReactNode
+} & Omit<React.ComponentProps<typeof Input>, "name" | "defaultValue" | "value" | "onChange">) {
   const id = useId()
   return (
     <Controller
@@ -39,14 +44,28 @@ export function FormInput<T extends FieldValues>({
             {ikon}
             {label}
           </FieldLabel>
-          <Input
-            {...input}
-            {...field}
-            value={field.value ?? ""}
-            id={id}
-            disabled={disabled}
-            aria-invalid={fieldState.invalid}
-          />
+          {awalan ? (
+            <InputGroup className="h-11 md:h-9">
+              <InputGroupAddon data-awalan>{awalan}</InputGroupAddon>
+              <InputGroupInput
+                {...input}
+                {...field}
+                value={field.value ?? ""}
+                id={id}
+                disabled={disabled}
+                aria-invalid={fieldState.invalid}
+              />
+            </InputGroup>
+          ) : (
+            <Input
+              {...input}
+              {...field}
+              value={field.value ?? ""}
+              id={id}
+              disabled={disabled}
+              aria-invalid={fieldState.invalid}
+            />
+          )}
           {description && <FieldDescription>{description}</FieldDescription>}
           {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
         </Field>
@@ -95,7 +114,8 @@ export function FormPassword<T extends FieldValues>({
   description,
   className,
   autoComplete = "current-password",
-}: Dasar<T> & { autoComplete?: string }) {
+  awalan,
+}: Dasar<T> & { autoComplete?: string; awalan?: React.ReactNode }) {
   const id = useId()
   const [lihat, setLihat] = useState(false)
   return (
@@ -106,6 +126,7 @@ export function FormPassword<T extends FieldValues>({
         <Field data-invalid={fieldState.invalid} className={className}>
           <FieldLabel htmlFor={id}>{label}</FieldLabel>
           <InputGroup className="h-11 md:h-9">
+            {awalan && <InputGroupAddon data-awalan>{awalan}</InputGroupAddon>}
             <InputGroupInput
               {...field}
               value={field.value ?? ""}

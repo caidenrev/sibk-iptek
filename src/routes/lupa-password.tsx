@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Link, createFileRoute, redirect, useRouter } from "@tanstack/react-router"
-import { ArrowLeft, KeyRound } from "lucide-react"
+import { ArrowLeft, KeyRound, LockKeyhole, UserRound } from "lucide-react"
 import { IkonEmail, IkonWhatsApp } from "@/components/app/ikon-kontak"
 import { useState } from "react"
 import { Controller, useForm } from "react-hook-form"
@@ -8,10 +8,9 @@ import { toast } from "sonner"
 import type { z } from "zod"
 import { FormInput, FormPassword } from "@/components/app/form"
 import { InputKodeOtp, KirimUlang } from "@/components/app/kode-otp"
-import { Logo } from "@/components/app/logo"
+import { TataLetakMasuk } from "@/components/app/tata-letak-masuk"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Spinner } from "@/components/ui/spinner"
@@ -39,44 +38,44 @@ function LupaPassword() {
   const [tahap, setTahap] = useState<Tahap>({ t: "akun" })
 
   return (
-    <div className="flex min-h-svh flex-col items-center justify-center gap-6 px-4 py-10">
-      <Link to="/" aria-label="Beranda SIBK">
-        <Logo />
-      </Link>
-      <Card className="w-full max-w-sm">
-        <CardHeader>
-          <span className="mb-1 flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
-            <KeyRound className="size-5" aria-hidden />
+    <TataLetakMasuk
+      judul="Lupa password"
+      ikon={<KeyRound className="size-5" aria-hidden />}
+      deskripsi={
+        <>
+          {tahap.t === "akun" && "Masukkan NIS/NIP. Kami kirim kode untuk membuat password baru."}
+          {tahap.t === "kanal" && "Kirim kode ke mana?"}
+          {tahap.t === "kode" &&
+            `Kode dikirim ke ${tahap.kanal.kanal === "email" ? "email" : "WhatsApp"} ${tahap.kanal.label}. Berlaku ${tahap.menit} menit.`}
+        </>
+      }
+      bawah={
+        <>
+          <span className="lg:hidden">
+            Sudah ingat password?{" "}
+            <Link to="/login" className="font-medium text-primary underline-offset-4 hover:underline">
+              Masuk
+            </Link>
           </span>
-          <CardTitle className="text-xl">Lupa password</CardTitle>
-          <CardDescription>
-            {tahap.t === "akun" && "Masukkan NIS/NIP. Kami kirim kode untuk membuat password baru."}
-            {tahap.t === "kanal" && "Kirim kode ke mana?"}
-            {tahap.t === "kode" &&
-              `Kode dikirim ke ${tahap.kanal.kanal === "email" ? "email" : "WhatsApp"} ${tahap.kanal.label}. Berlaku ${tahap.menit} menit.`}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {tahap.t === "akun" && <LangkahAkun onLanjut={(username, pilihan) => setTahap({ t: "kanal", username, pilihan })} />}
-          {tahap.t === "kanal" && (
-            <LangkahKanal
-              username={tahap.username}
-              pilihan={tahap.pilihan}
-              onKembali={() => setTahap({ t: "akun" })}
-              onTerkirim={(kanal, menit) => setTahap({ t: "kode", username: tahap.username, kanal, menit })}
-            />
-          )}
-          {tahap.t === "kode" && (
-            <LangkahKode username={tahap.username} kanal={tahap.kanal} onGanti={() => setTahap({ t: "akun" })} />
-          )}
-        </CardContent>
-      </Card>
-      <Button asChild variant="link" className="text-muted-foreground">
-        <Link to="/login">
-          <ArrowLeft data-icon="inline-start" /> Kembali ke halaman masuk
-        </Link>
-      </Button>
-    </div>
+          <Button asChild variant="link" className="hidden text-muted-foreground lg:inline-flex">
+            <Link to="/login">
+              <ArrowLeft data-icon="inline-start" /> Kembali ke halaman masuk
+            </Link>
+          </Button>
+        </>
+      }
+    >
+      {tahap.t === "akun" && <LangkahAkun onLanjut={(username, pilihan) => setTahap({ t: "kanal", username, pilihan })} />}
+      {tahap.t === "kanal" && (
+        <LangkahKanal
+          username={tahap.username}
+          pilihan={tahap.pilihan}
+          onKembali={() => setTahap({ t: "akun" })}
+          onTerkirim={(kanal, menit) => setTahap({ t: "kode", username: tahap.username, kanal, menit })}
+        />
+      )}
+      {tahap.t === "kode" && <LangkahKode username={tahap.username} kanal={tahap.kanal} onGanti={() => setTahap({ t: "akun" })} />}
+    </TataLetakMasuk>
   )
 }
 
@@ -117,9 +116,10 @@ function LangkahAkun({ onLanjut }: { onLanjut: (username: string, pilihan: Array
           autoComplete="username"
           autoCapitalize="none"
           spellCheck={false}
+          awalan={<UserRound />}
           className="[&_input]:h-11 md:[&_input]:h-9"
         />
-        <Button type="submit" size="lg" className="h-11 md:h-10" disabled={form.formState.isSubmitting}>
+        <Button type="submit" size="lg" className="h-12 md:h-10" disabled={form.formState.isSubmitting}>
           {form.formState.isSubmitting && <Spinner data-icon="inline-start" />}
           Lanjut
         </Button>
@@ -250,9 +250,10 @@ function LangkahKode({ username, kanal, onGanti }: { username: string; kanal: Ka
           label="Password baru"
           autoComplete="new-password"
           description="Minimal 8 karakter, kombinasi huruf dan angka."
+          awalan={<LockKeyhole />}
         />
-        <FormPassword control={form.control} name="konfirmasi" label="Ulangi password baru" autoComplete="new-password" />
-        <Button type="submit" size="lg" className="h-11 md:h-10" disabled={form.formState.isSubmitting}>
+        <FormPassword control={form.control} name="konfirmasi" label="Ulangi password baru" autoComplete="new-password" awalan={<LockKeyhole />} />
+        <Button type="submit" size="lg" className="h-12 md:h-10" disabled={form.formState.isSubmitting}>
           {form.formState.isSubmitting && <Spinner data-icon="inline-start" />}
           Simpan password & masuk
         </Button>

@@ -1,8 +1,9 @@
 import { Link, useLocation } from "@tanstack/react-router"
-import { Bell, LogOut, Plus, UserRound } from "lucide-react"
+import { LogOut, Plus, UserRound } from "lucide-react"
 import { AppSidebar, inisial, useKeluar } from "./app-sidebar"
 import { usePantauDataBaru } from "./pantau-data-baru"
 import { AjakanPasang } from "./pasang-aplikasi"
+import { Lonceng } from "./lonceng"
 import { Logo } from "./logo"
 import { ThemeToggle } from "./theme-toggle"
 import type { NavItem, Peran } from "./nav"
@@ -17,8 +18,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { cn } from "@/lib/utils"
 
@@ -31,7 +30,18 @@ function flatNav(peran: Peran) {
 /** Jumlah item belum dibaca per menu (mis. { "/siswa/pengaduan": 2 }). */
 export type Lencana = Partial<Record<NavItem["to"], number>>
 
-export function AppShell({ user, children, lencana }: { user: ShellUser; children: React.ReactNode; lencana?: Lencana }) {
+export function AppShell({
+  user,
+  children,
+  lencana,
+  notif,
+}: {
+  user: ShellUser
+  children: React.ReactNode
+  lencana?: Lencana
+  /** Jumlah notifikasi lonceng yang belum dibaca */
+  notif?: number
+}) {
   const { pathname } = useLocation()
   const all = flatNav(user.role)
   const current = all.find((i) => isNavActive(pathname, i, all))
@@ -55,7 +65,8 @@ export function AppShell({ user, children, lencana }: { user: ShellUser; childre
           </span>
           <div className="ml-auto flex items-center gap-1">
             <ThemeToggle />
-            <NotifikasiPopover />
+            {/* Admin memantau pesan lewat halaman Log Notifikasi */}
+            {user.role !== "admin" && <Lonceng belumDibaca={notif} />}
             {/* Di desktop menu akun ada di kartu bawah sidebar */}
             <div className="md:hidden">
               <UserMenu user={user} />
@@ -71,30 +82,6 @@ export function AppShell({ user, children, lencana }: { user: ShellUser; childre
 
       {isSiswa && <SiswaBottomNav pathname={pathname} lencana={lencana} />}
     </SidebarProvider>
-  )
-}
-
-function NotifikasiPopover() {
-  return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <Button variant="ghost" size="icon" aria-label="Notifikasi">
-          <Bell />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent align="end" className="w-80 p-0">
-        <div className="border-b px-4 py-3 text-sm font-semibold">Notifikasi</div>
-        <Empty className="py-8">
-          <EmptyHeader>
-            <EmptyMedia variant="icon">
-              <Bell />
-            </EmptyMedia>
-            <EmptyTitle>Belum ada notifikasi</EmptyTitle>
-            <EmptyDescription>Tanggapan dan pengingat jadwal akan muncul di sini.</EmptyDescription>
-          </EmptyHeader>
-        </Empty>
-      </PopoverContent>
-    </Popover>
   )
 }
 

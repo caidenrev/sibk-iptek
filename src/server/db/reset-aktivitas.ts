@@ -2,10 +2,14 @@
 //
 //   pnpm db:reset-aktivitas           → hanya MENAMPILKAN apa yang akan dihapus (aman)
 //   pnpm db:reset-aktivitas --yakin   → benar-benar menghapus
+//   tambah --akun-siswa               → akun siswa juga dikembalikan ke kondisi awal (lihat di bawah)
 //
-// Yang DIHAPUS: pengaduan & tanggapan (beserta file lampiran), kode OTP, sesi login (semua orang
-// keluar), serta tabel aktivitas Sprint 3 bila sudah ada (slot & jadwal konseling, catatan, notifikasi).
-// Yang TETAP: akun (admin, Guru BK, siswa), kelas, kategori masalah, pengaturan.
+// Yang DIHAPUS: pengaduan & tanggapan (beserta file lampiran), slot & jadwal konseling, catatan
+// konseling, log notifikasi, notifikasi lonceng, kode OTP, sesi login (semua orang keluar), dan status cron terakhir.
+// Dengan --akun-siswa: password siswa kembali = NIS (wajib ganti saat login), kontak WA/email siswa
+// dan status verifikasinya dikosongkan. Akun admin & Guru BK tidak disentuh.
+// Yang TETAP: akun (admin, Guru BK, siswa), kelas, kategori masalah, token Fonnte.
+import bcrypt from "bcryptjs"
 import { readdir, rm } from "node:fs/promises"
 import path from "node:path"
 import { Pool } from "pg"
@@ -19,13 +23,18 @@ const TABEL_AKTIVITAS = [
   "jadwal_konseling",
   "slot_jadwal",
   "notifikasi",
+  "pemberitahuan",
   "kode_otp",
   "sesi",
 ]
 const BUCKET = "lampiran"
 const FOLDER_LOKAL = path.resolve("storage", BUCKET)
 
+// Pengaturan yang hanya mencatat aktivitas (bukan konfigurasi).
+const PENGATURAN_AKTIVITAS = ["cron.terakhir"]
+
 const yakin = process.argv.includes("--yakin")
+const akunSiswa = process.argv.includes("--akun-siswa")
 const url = process.env.DATABASE_URL
 if (!url) {
   console.error("DATABASE_URL belum diisi di .env")
@@ -104,6 +113,24 @@ try {
   const fileLokal = await jumlahFileLokal()
   console.log(`  ${"lampiran (Storage)".padEnd(20)} ${String(fileStorage.length).padStart(6)} file${SUPA && KUNCI ? "" : "  (SUPABASE_URL belum diisi, dilewati)"}`)
   console.log(`  ${"lampiran (lokal)".padEnd(20)} ${String(fileLokal).padStart(6)} file`)
+  const { rows: pAkt } = await pool.query<{ n: number }>(`select count(*)::int as n from pengaturan where kunci = any($1)`, [
+    PENGATURAN_AKTIVITAS,
+  ])
+  console.log(`  ${"status cron".padEnd(20)} ${String(pAkt[0].n).padStart(6)} baris`)
+
+  // Siswa yang sudah pernah dipakai: sudah ganti password atau sudah mengisi kontak.
+  const { rows: siswaDipakai } = await pool.query<{ username: string; nama: string }>(
+    `select username, nama from users
+     where role = 'siswa'
+       and (harus_ganti_password = false or email is not null or no_whatsapp is not null)
+     order by username`
+  )
+  console.log(
+    `\nAkun siswa yang sudah dipakai: ${siswaDipakai.length}` +
+      (akunSiswa ? "  → dikembalikan ke kondisi awal" : "  (tidak disentuh; tambah --akun-siswa untuk ikut mereset)")
+  )
+  for (const s of siswaDipakai.slice(0, 10)) console.log(`  ${s.username}  ${s.nama}`)
+  if (siswaDipakai.length > 10) console.log(`  … dan ${siswaDipakai.length - 10} lainnya`)
 
   console.log("\nTetap disimpan:")
   const TETAP = ["users", "guru_bk", "siswa", "kelas", "kategori_masalah", "pengaturan"]
@@ -118,12 +145,38 @@ try {
 
   if (!yakin) {
     console.log("\nBelum ada yang dihapus. Jalankan lagi dengan --yakin untuk menghapus:")
-    console.log("  pnpm db:reset-aktivitas --yakin\n")
+    console.log(`  pnpm db:reset-aktivitas --yakin${akunSiswa ? " --akun-siswa" : ""}\n`)
   } else {
-    // Satu perintah TRUNCATE: semua tabel terhapus bersamaan atau tidak sama sekali.
-    // Tanpa CASCADE, supaya kalau ada tabel lain yang masih merujuk, perintah gagal dan tidak ada yang hilang.
-    await pool.query(`truncate table ${tabel.map((t) => `"${t}"`).join(", ")} restart identity`)
+    // Hash password siswa disiapkan dulu (lambat), supaya transaksi di bawah singkat.
+    const hashSiswa = akunSiswa
+      ? await Promise.all(siswaDipakai.map(async (s) => [s.username, await bcrypt.hash(s.username, 10)] as const))
+      : []
+
+    // Satu transaksi: semua terhapus bersamaan atau tidak sama sekali.
+    // TRUNCATE tanpa CASCADE, supaya kalau ada tabel lain yang masih merujuk, perintah gagal dan tidak ada yang hilang.
+    const klien = await pool.connect()
+    try {
+      await klien.query("begin")
+      await klien.query(`truncate table ${tabel.map((t) => `"${t}"`).join(", ")} restart identity`)
+      await klien.query(`delete from pengaturan where kunci = any($1)`, [PENGATURAN_AKTIVITAS])
+      for (const [username, hash] of hashSiswa) {
+        await klien.query(
+          `update users set password = $2, harus_ganti_password = true, email = null, no_whatsapp = null,
+             email_terverifikasi_pada = null, wa_terverifikasi_pada = null, updated_at = now()
+           where username = $1 and role = 'siswa'`,
+          [username, hash]
+        )
+      }
+      await klien.query("commit")
+    } catch (e) {
+      await klien.query("rollback")
+      throw e
+    } finally {
+      klien.release()
+    }
     console.log(`\n✓ ${tabel.length} tabel aktivitas dikosongkan, nomor urut (id) dimulai lagi dari 1`)
+    console.log("✓ Status cron terakhir dihapus")
+    if (hashSiswa.length) console.log(`✓ ${hashSiswa.length} akun siswa dikembalikan: password = NIS, kontak dikosongkan`)
 
     if (fileStorage.length) {
       await hapusFileStorage(fileStorage)

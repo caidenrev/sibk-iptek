@@ -1,7 +1,7 @@
 import "@tanstack/react-start/server-only"
 import { and, eq, gte, inArray, sql } from "drizzle-orm"
 import { db } from "../db/client"
-import { guruBk, jadwalKonseling, kategoriMasalah, kelas, notifikasi, pengaduan, siswa, slotJadwal, users } from "../db/schema"
+import { guruBk, jadwalKonseling, kategoriMasalah, kelas, notifikasi, pemberitahuan, pengaduan, siswa, slotJadwal, users } from "../db/schema"
 import type { Kanal } from "../db/schema"
 import { dekripsi } from "../crypto"
 import { kirimEmail, kirimWhatsapp } from "../notif/kirim"
@@ -26,8 +26,22 @@ export type Kejadian =
   | { jenis: "tes"; userId: number }
 
 type Penerima = { userId: number; nama: string; email: string | null; wa: string | null }
-type Pesan = ReturnType<typeof pesanNotifikasi>
-type Rencana = { penerima: Penerima; pesan: Pesan; refTipe: string | null; refId: number | null; sensitif: boolean; kunci: string }
+
+/** Pesan WA/email + ringkasan untuk lonceng di aplikasi (judul, kalimat pertama, tautan). */
+function susun(p: Parameters<typeof pesanNotifikasi>[0]) {
+  return { ...pesanNotifikasi(p), app: { judul: p.judul.slice(0, 120), isi: (p.baris[0] ?? "").slice(0, 300), tautan: p.tautan } }
+}
+type Pesan = ReturnType<typeof susun>
+type Rencana = {
+  penerima: Penerima
+  pesan: Pesan
+  refTipe: string | null
+  refId: number | null
+  sensitif: boolean
+  kunci: string
+  /** Balasan beruntun: tetap masuk lonceng, tapi tidak dikirim lagi lewat WA/email. */
+  redam?: boolean
+}
 
 // ---------------------------------------------------------------- penerima
 
@@ -86,7 +100,7 @@ async function rencanaPengaduan(k: Extract<Kejadian, { jenis: "pengaduan_baru" |
     // Aduan beridentitas → pembina kelas; aduan anonim → semua Guru BK (antrean bersama).
     const ke = await penerimaDariUser(await userGuru(p.guruBkId ? [p.guruBkId] : "semua"))
     const pesan = (n: string) =>
-      pesanNotifikasi({
+      susun({
         nama: n,
         judul: p.urgensi === "tinggi" ? "Pengaduan mendesak masuk" : "Pengaduan baru masuk",
         baris: [
@@ -103,12 +117,13 @@ async function rencanaPengaduan(k: Extract<Kejadian, { jenis: "pengaduan_baru" |
     // Pemilik aduan anonim dikenali dari ID terenkripsi, hanya untuk mengirim pesan ke dirinya sendiri.
     const siswaId = p.siswaId ?? Number(dekripsi(p.terenkripsi))
     const uid = await userSiswa(siswaId)
-    if (!uid || (await baruDiberiTahu(uid, p.id))) return []
+    if (!uid) return []
+    const redam = await baruDiberiTahu(uid, p.id)
     const ke = await penerimaDariUser([uid])
     return ke.map((r) => ({
       penerima: r,
       // Kalimat sama untuk aduan anonim maupun beridentitas: tidak menyebut isi atau judul aduan.
-      pesan: pesanNotifikasi({
+      pesan: susun({
         nama: r.nama,
         judul: "Ada tanggapan baru dari Guru BK",
         baris: [`Guru BK membalas tiket ${p.kode}.`, "Buka SIBK untuk membacanya."],
@@ -119,6 +134,7 @@ async function rencanaPengaduan(k: Extract<Kejadian, { jenis: "pengaduan_baru" |
       refId: p.id,
       sensitif,
       kunci: `tanggapan:${k.tanggapanId}`,
+      redam,
     }))
   }
 
@@ -127,10 +143,10 @@ async function rencanaPengaduan(k: Extract<Kejadian, { jenis: "pengaduan_baru" |
   const uids = await userGuru([p.guruBkId])
   const hasil: Array<Rencana> = []
   for (const r of await penerimaDariUser(uids)) {
-    if (await baruDiberiTahu(r.userId, p.id)) continue
     hasil.push({
+      redam: await baruDiberiTahu(r.userId, p.id),
       penerima: r,
-      pesan: pesanNotifikasi({
+      pesan: susun({
         nama: r.nama,
         judul: "Siswa membalas pengaduan",
         baris: [`Ada pesan baru dari siswa di tiket ${p.kode}.`],
@@ -191,7 +207,7 @@ async function rencanaJadwal(k: Extract<Kejadian, { jadwalId: number }>): Promis
   const keSiswa = async (judul: string, baris: Array<string>) =>
     (await penerimaDariUser([j.siswaUser])).map((r) => ({
       penerima: r,
-      pesan: pesanNotifikasi({ nama: r.nama, judul, baris, tautan: "/siswa/jadwal", labelTautan: "Lihat jadwal" }),
+      pesan: susun({ nama: r.nama, judul, baris, tautan: "/siswa/jadwal", labelTautan: "Lihat jadwal" }),
       refTipe: "jadwal",
       refId: j.id,
       sensitif: false,
@@ -200,7 +216,7 @@ async function rencanaJadwal(k: Extract<Kejadian, { jadwalId: number }>): Promis
   const keGuru = async (judul: string, baris: Array<string>, tautan = "/guru/jadwal") =>
     (await penerimaDariUser([j.guruUser])).map((r) => ({
       penerima: r,
-      pesan: pesanNotifikasi({ nama: r.nama, judul, baris, tautan, labelTautan: "Buka SIBK" }),
+      pesan: susun({ nama: r.nama, judul, baris, tautan, labelTautan: "Buka SIBK" }),
       refTipe: "jadwal",
       refId: j.id,
       sensitif: false,
@@ -232,7 +248,7 @@ async function rencana(k: Kejadian): Promise<Array<Rencana>> {
   if (k.jenis === "tes") {
     return (await penerimaDariUser([k.userId])).map((r) => ({
       penerima: r,
-      pesan: pesanNotifikasi({
+      pesan: susun({
         nama: r.nama,
         judul: "Pesan uji dari SIBK",
         baris: ["Kalau kamu menerima pesan ini, notifikasi SIBK ke kontak ini sudah berjalan."],
@@ -250,10 +266,21 @@ async function rencana(k: Kejadian): Promise<Array<Rencana>> {
 
 // ---------------------------------------------------------------- antrean
 
-/** Buat baris notifikasi (satu per kanal yang terverifikasi). Kunci unik mencegah pesan ganda. */
+/**
+ * Catat ke lonceng aplikasi (semua penerima) dan buat baris notifikasi WA/email (satu per kanal
+ * yang terverifikasi). Kunci unik mencegah pesan ganda.
+ */
 export async function catatNotifikasi(k: Kejadian): Promise<Array<number>> {
   const daftar = await rencana(k)
-  const baris = daftar.flatMap((r) => {
+
+  if (k.jenis !== "tes" && daftar.length) {
+    await db
+      .insert(pemberitahuan)
+      .values(daftar.map((r) => ({ userId: r.penerima.userId, jenis: k.jenis, kunci: r.kunci, ...r.pesan.app })))
+      .onConflictDoNothing()
+  }
+
+  const baris = daftar.filter((r) => !r.redam).flatMap((r) => {
     const kanal: Array<{ kanal: Kanal; tujuan: string }> = []
     if (r.penerima.email) kanal.push({ kanal: "email", tujuan: r.penerima.email })
     if (r.penerima.wa) kanal.push({ kanal: "whatsapp", tujuan: r.penerima.wa })
@@ -363,9 +390,9 @@ export async function buatPengingat() {
     from jadwal_konseling j join slot_jadwal s on s.id = j.slot_id
     where j.status = 'disetujui' and ${mulai} > now() and ${mulai} <= now() + interval '24 hours'
       and not exists (
-        select 1 from notifikasi n
-        where n.ref_tipe = 'jadwal' and n.ref_id = j.id
-          and n.kunci = (case when ${mulai} <= now() + interval '60 minutes' then 'pengingat_1jam:' else 'pengingat_h1:' end) || j.id
+        -- Lonceng dicatat untuk setiap penerima (WA/email hanya yang punya kontak), jadi cukup dicek di sini.
+        select 1 from pemberitahuan n
+        where n.kunci =(case when ${mulai} <= now() + interval '60 minutes' then 'pengingat_1jam:' else 'pengingat_h1:' end) || j.id
       )`)
   let dibuat = 0
   for (const r of rows) dibuat += (await catatNotifikasi({ jenis: r.jenis, jadwalId: r.id })).length

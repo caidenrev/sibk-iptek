@@ -59,3 +59,14 @@ export const jamTitik = (j: string) => j.slice(0, 5).replace(":", ".")
 export function formatSlot(tanggal: string, jamMulai: string, jamSelesai: string) {
   return `${formatTanggal(`${tanggal}T12:00:00+07:00`)} · ${jamTitik(jamMulai)}–${jamTitik(jamSelesai)} WIB`
 }
+
+/** "Baru saja", "5 menit lalu", "3 jam lalu", "Kemarin", lalu "2 Nov 2026". */
+export function formatRelatif(d: Date | string | number, sekarang = Date.now()) {
+  const detik = Math.max(0, (sekarang - toDate(d).getTime()) / 1000)
+  if (detik < 60) return "Baru saja"
+  if (detik < 3600) return `${Math.floor(detik / 60)} menit lalu`
+  if (detik < 86400) return `${Math.floor(detik / 3600)} jam lalu`
+  if (detik < 2 * 86400) return "Kemarin"
+  if (detik < 7 * 86400) return `${Math.floor(detik / 86400)} hari lalu`
+  return formatTanggalPendek(d)
+}

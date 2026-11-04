@@ -7,10 +7,23 @@ import { db } from "../db/client"
 import {
   guruBk,
   kategoriMasalah,
+  pemberitahuan,
   pengaduan,
   tanggapan,
   users,
 } from "../db/schema"
+
+/** Jumlah notifikasi lonceng yang belum dibaca, plus id terbaru (untuk jejak perubahan). */
+async function lonceng(userId: number) {
+  const [r] = await db
+    .select({
+      belum: sql<number>`count(*) filter (where ${pemberitahuan.dibacaPada} is null)`.mapWith(Number),
+      terakhir: sql<string>`coalesce(max(${pemberitahuan.id})::text, '0')`,
+    })
+    .from(pemberitahuan)
+    .where(eq(pemberitahuan.userId, userId))
+  return r
+}
 import { hashPengirim } from "../crypto"
 import {
   ambilPercakapan,
@@ -437,10 +450,10 @@ export const lencanaFn = createServerFn({ method: "GET" })
         })
         .from(pengaduan)
         .where(eq(pengaduan.pengirimHash, hashPengirim(u.siswaId)))
-      return { pengaduan: r.n, jadwal: 0 }
+      return { pengaduan: r.n, jadwal: 0, notif: (await lonceng(u.id)).belum }
     }
     if (u.role === "guru_bk") {
-      const [[r], [{ jadwal }]] = await Promise.all([
+      const [[r], [{ jadwal }], { belum }] = await Promise.all([
         db
           .select({
             n: sql<number>`count(*) filter (where ${P.status} <> 'selesai' and (${P.guruBkId} is null or ${P.guruBkId} = ${u.guruBkId ?? -1}) and coalesce(${balasanTerakhir("siswa")}, ${P.createdAt}) > coalesce(${P.dibacaGuru}, 'epoch'::timestamptz))`.mapWith(
@@ -457,10 +470,11 @@ export const lencanaFn = createServerFn({ method: "GET" })
             and ((s.tanggal + s.jam_mulai) at time zone 'Asia/Jakarta') > now()`
           )
           .then((x) => x.rows),
+        lonceng(u.id),
       ])
-      return { pengaduan: r.n, jadwal }
+      return { pengaduan: r.n, jadwal, notif: belum }
     }
-    return { pengaduan: 0, jadwal: 0 }
+    return { pengaduan: 0, jadwal: 0, notif: 0 }
   })
 
 /**
@@ -493,7 +507,8 @@ export const jejakFn = createServerFn({ method: "GET" })
                 from jadwal_konseling j join slot_jadwal s on s.id = j.slot_id where s.guru_bk_id = ${u.guruBkId ?? -1}`
       )
       .then((x) => x.rows)
-    return { jejak: `${r.n}|${r.terakhir}|${j.n}|${j.t}` }
+    const l = await lonceng(u.id)
+    return { jejak: `${r.n}|${r.terakhir}|${j.n}|${j.t}|${l.terakhir}|${l.belum}` }
   })
 
 // ================================================================ ringkasan dashboard Guru BK

@@ -23,8 +23,17 @@ pnpm db:reset-aktivitas --yakin
 | Pengaduan dan semua percakapannya | Akun admin, Guru BK, siswa |
 | File lampiran (Supabase Storage dan folder lokal) | Kelas dan Guru BK pembinanya |
 | Kode OTP | Kategori masalah |
-| Sesi login (semua orang otomatis keluar) | Pengaturan |
-| Slot jadwal, jadwal konseling, catatan, notifikasi (setelah Sprint 3) | |
+| Sesi login (semua orang otomatis keluar) | Token Fonnte |
+| Slot jadwal, jadwal konseling, catatan konseling, log notifikasi, notifikasi lonceng | |
+| Status cron terakhir (terisi lagi dalam 1 menit) | |
+
+Kalau akun siswa uji tetap dipakai (tidak dihapus), tambahkan `--akun-siswa`:
+
+```bash
+pnpm db:reset-aktivitas --yakin --akun-siswa
+```
+
+Siswa yang sudah pernah login akan kembali ke kondisi awal: password kembali sama dengan NIS dan wajib diganti saat login, sementara nomor WA, email, dan status verifikasinya dikosongkan. Akun admin dan Guru BK tidak disentuh.
 
 Nomor kode tiket tetap acak. Nomor urut internal (id) dimulai lagi dari 1.
 Perintah ini tidak bisa dibatalkan. Kalau perlu cadangan, buat backup dulu di dashboard Supabase (Database → Backups).
